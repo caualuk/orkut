@@ -17,7 +17,10 @@ describe('Rotas /api/auth', () => {
   });
 
   const postLogin = (body: unknown) =>
-    request(ctx.app).post('/api/auth/login').set('Origin', TEST_ORIGIN).send(body as object);
+    request(ctx.app)
+      .post('/api/auth/login')
+      .set('Origin', TEST_ORIGIN)
+      .send(body as object);
 
   describe('POST /login', () => {
     it('autentica e define cookie de sessão HttpOnly + SameSite=Strict', async () => {
@@ -25,7 +28,11 @@ describe('Rotas /api/auth', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
-        user: { id: expect.any(String), email: TEST_USER.email, displayName: TEST_USER.displayName },
+        user: {
+          id: expect.any(String),
+          email: TEST_USER.email,
+          displayName: TEST_USER.displayName,
+        },
       });
 
       const cookie = sessionCookie(res);

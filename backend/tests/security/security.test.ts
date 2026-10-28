@@ -196,7 +196,10 @@ describe('Segurança da API', () => {
           .set('Origin', TEST_ORIGIN)
           .send({ email: TEST_USER.email, password: `errada-${i}` });
       }
-      const res = await request(app).post('/api/auth/login').set('Origin', TEST_ORIGIN).send(TEST_USER);
+      const res = await request(app)
+        .post('/api/auth/login')
+        .set('Origin', TEST_ORIGIN)
+        .send(TEST_USER);
       expect(res.status).toBe(401);
     });
   });
