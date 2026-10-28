@@ -1,0 +1,96 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens do orkut (fonte: Spec · Design System & Motion).
+ * Regra 60-30-10: neutros claros, grafite para texto/ícones e rosa apenas em
+ * ação principal, item ativo, badges, links e foco.
+ */
+@theme {
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #e91e63;
+  --color-primary-strong: #c2185b;
+  --color-primary-soft: #f06292;
+  --color-primary-deep: #ad1457;
+  --color-primary-container: #fdecf2;
+
+  --color-ink: #1c1b1f;
+  --color-ink-secondary: #49454f;
+  --color-ink-muted: #79747e;
+  --color-outline: #cac4d0;
+  --color-divider: #eceaef;
+
+  --color-surface: #ffffff;
+  --color-surface-variant: #f2f1f4;
+  --color-background: #f6f6f8;
+
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
+  --radius-3xl: 32px;
+
+  --text-display: 58px;
+  --text-display--line-height: 66px;
+  --text-display--letter-spacing: -0.02em;
+
+  /* Sombras neutras #1C1B1F entre 4% e 7% (key + ambient). */
+  --shadow-card: 0 4px 12px rgb(28 27 31 / 6%), 0 40px 80px rgb(28 27 31 / 14%);
+  --shadow-float: 0 20px 40px rgb(28 27 31 / 12%);
+
+  /* Material emphasized easing. */
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* Utilitário para conteúdo exclusivo de leitores de tela. */
+@utility sr-only-focusable {
+  &:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Transição Login → Home (View Transitions API): o logo viaja até a Top App Bar. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 450ms;
+  animation-timing-function: var(--ease-emphasized);
+}
+
+::view-transition-group(brand-logo) {
+  animation-duration: 450ms;
+  animation-timing-function: var(--ease-emphasized);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 150ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 150ms !important;
+  }
+}
