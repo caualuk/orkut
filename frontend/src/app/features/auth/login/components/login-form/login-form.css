@@ -1,0 +1,79 @@
+:host {
+  display: block;
+}
+
+/* Card de vidro (glassmorphism) com tilt 3D e brilho especular (Motion spec · 04). */
+.card {
+  background: rgb(255 255 255 / 94%);
+  backdrop-filter: blur(30px);
+  border: 2px solid #fff;
+  border-bottom-width: 0;
+  box-shadow: 0 -8px 40px rgb(28 27 31 / 8%);
+  transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 300ms var(--ease-emphasized);
+  transform-style: preserve-3d;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--glare-x, 50%) var(--glare-y, 0%),
+    rgb(255 255 255 / 55%),
+    transparent 55%
+  );
+  opacity: var(--glare-opacity, 0);
+  transition: opacity 300ms var(--ease-emphasized);
+}
+
+@media (min-width: 640px) {
+  .card {
+    border-bottom-width: 2px;
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* Botão "Entrar": base de 6px (efeito tecla), eleva no hover e afunda no press (Motion spec · 06). */
+.cta {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f06292 0%, #d81b60 100%);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 33%),
+    0 6px 0 rgb(173 20 87 / 40%),
+    0 18px 30px rgb(233 30 99 / 33%);
+  transition:
+    transform 150ms var(--ease-emphasized),
+    box-shadow 150ms var(--ease-emphasized),
+    filter 150ms var(--ease-emphasized);
+  cursor: pointer;
+}
+
+.cta:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 33%),
+    0 8px 0 rgb(173 20 87 / 40%),
+    0 22px 36px rgb(233 30 99 / 38%);
+}
+
+.cta:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 25%),
+    0 0 0 rgb(173 20 87 / 40%),
+    0 8px 16px rgb(233 30 99 / 28%);
+}
+
+.cta:focus-visible {
+  outline: 3px solid var(--color-primary-strong);
+  outline-offset: 4px;
+}
+
+.cta.is-pending {
+  cursor: progress;
+  filter: saturate(0.85);
+}

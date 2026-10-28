@@ -1,0 +1,67 @@
+:host {
+  display: block;
+}
+
+.page {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f4f8 60%, #e9e7ee 100%);
+}
+
+/* Entrada (Motion spec · 01): textos sobem 24px + fade com stagger de 80ms. */
+.enter {
+  animation: rise 500ms var(--ease-emphasized) both;
+}
+
+.enter-2 {
+  animation-delay: 80ms;
+}
+
+.enter-3 {
+  animation-delay: 160ms;
+}
+
+/* Card entra com scale 0.96 → 1 e rotateX 8° → 0°. */
+.card-stack {
+  position: relative;
+  perspective: 1000px;
+  animation: card-in 600ms var(--ease-emphasized) 120ms both;
+}
+
+/* Camada traseira rotacionada −4° para sensação de pilha (apenas sm+). */
+@media (min-width: 640px) {
+  .card-stack::before {
+    content: '';
+    position: absolute;
+    inset: 20px -20px -20px 20px;
+    border-radius: 32px;
+    background: rgb(28 27 31 / 6%);
+    rotate: -4deg;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) rotateX(8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter,
+  .card-stack {
+    animation-name: fade;
+    animation-delay: 0ms;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+}

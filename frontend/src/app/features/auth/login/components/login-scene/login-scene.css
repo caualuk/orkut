@@ -1,0 +1,344 @@
+/*
+ * Posições derivadas do frame "Login · Desktop 1440" (1440 × 900), expressas em
+ * porcentagem para acompanhar a viewport. Mobile segue o frame "M · Login" (390).
+ */
+:host {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  --parallax-x: 0;
+  --parallax-y: 0;
+}
+
+/* Parallax: cada camada se desloca proporcionalmente à sua profundidade. */
+.layer {
+  position: absolute;
+  transform: translate3d(
+    calc(var(--parallax-x) * var(--depth, 0px)),
+    calc(var(--parallax-y) * var(--depth, 0px)),
+    0
+  );
+  transition: transform 600ms var(--ease-emphasized);
+}
+
+.layer--sphere-lg {
+  --depth: 36px;
+}
+.layer--sphere-sm {
+  --depth: 16px;
+}
+.layer--ring {
+  --depth: 24px;
+}
+.layer--star {
+  --depth: 12px;
+}
+.layer--chip {
+  --depth: 10px;
+}
+.layer--scrap {
+  --depth: 20px;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+}
+
+.blob--pink {
+  width: 720px;
+  height: 720px;
+  left: -180px;
+  top: -220px;
+  background: radial-gradient(closest-side, rgb(248 187 208 / 40%), rgb(248 187 208 / 0%));
+}
+
+.blob--lavender {
+  width: 640px;
+  height: 640px;
+  left: 68%;
+  top: 58%;
+  background: radial-gradient(closest-side, rgb(215 211 224 / 40%), rgb(215 211 224 / 0%));
+}
+
+/* Esferas 3D: gradiente radial + inner shadows com luz superior esquerda. */
+.sphere {
+  border-radius: 9999px;
+  width: 100%;
+  height: 100%;
+}
+
+.sphere--pink {
+  background: radial-gradient(circle, #ffe3ee 0%, #f06292 55%, #c2185b 100%);
+  box-shadow:
+    inset -26px -30px 50px rgb(136 14 79 / 80%),
+    inset 18px 20px 30px rgb(255 255 255 / 67%),
+    0 40px 60px rgb(28 27 31 / 20%);
+}
+
+.sphere--pearl {
+  background: radial-gradient(circle, #ffffff 0%, #eceaf0 60%, #b9b4c2 100%);
+  box-shadow:
+    inset -12px -14px 24px rgb(110 104 122 / 60%),
+    inset 8px 8px 14px rgb(255 255 255 / 80%),
+    0 20px 32px rgb(28 27 31 / 15%);
+}
+
+.layer--sphere-lg {
+  width: 180px;
+  height: 180px;
+  right: -40px;
+  top: 70px;
+}
+
+.layer--sphere-sm {
+  width: 44px;
+  height: 44px;
+  left: 48%;
+  top: 52px;
+}
+
+.layer--sphere-lg .float,
+.layer--sphere-sm .float,
+.layer--ring .float {
+  width: 100%;
+  height: 100%;
+}
+
+/* Anel 3D: borda de 22px com gradiente, girando lentamente (Motion spec · 03). */
+.ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #ffffff 0%, #d9d6de 50%, #8f8a96 100%);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 22px), #000 calc(100% - 21px));
+  filter: drop-shadow(0 24px 20px rgb(28 27 31 / 15%));
+  animation: spin 20s linear infinite;
+}
+
+.layer--ring {
+  width: 56px;
+  height: 56px;
+  right: 30px;
+  top: 277px;
+}
+
+.layer--ring .ring {
+  mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 11px));
+}
+
+.star-shadow {
+  width: 64px;
+  height: 64px;
+  filter: drop-shadow(0 14px 12px rgb(28 27 31 / 15%));
+}
+
+.star {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #cac4d0 100%);
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+  animation: spin 20s linear infinite;
+}
+
+/* Cartões flutuantes de vidro (glassmorphism). */
+.glass {
+  background: rgb(255 255 255 / 82%);
+  backdrop-filter: blur(20px);
+  border: 1.5px solid #fff;
+  box-shadow: var(--shadow-float);
+  white-space: nowrap;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 44px;
+  border-radius: 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.scrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 260px;
+  height: 96px;
+  padding: 0 16px;
+  border-radius: 20px;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  border: 3px solid #fff;
+  background: linear-gradient(135deg, #b3e5fc 0%, #4fc3f7 100%);
+}
+
+.layer--star,
+.layer--chip,
+.layer--scrap {
+  display: none;
+}
+
+/* Animações contínuas (Motion spec · 02 e 03). */
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.float--mid {
+  animation-delay: -2s;
+}
+
+.float--late {
+  animation-delay: -4s;
+}
+
+.sway--chip {
+  rotate: -5deg;
+  animation: sway 5s ease-in-out infinite;
+}
+
+.sway--scrap {
+  rotate: 6deg;
+  animation: sway 7s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(-12px);
+  }
+  50% {
+    transform: translateY(12px);
+  }
+}
+
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Medium (tablet) e Expanded (desktop). */
+@media (min-width: 600px) {
+  .layer--sphere-lg {
+    width: 200px;
+    height: 200px;
+    right: 6%;
+    top: 40px;
+  }
+
+  .layer--sphere-sm {
+    width: 80px;
+    height: 80px;
+    left: 4%;
+    top: auto;
+    bottom: 8%;
+  }
+
+  .layer--ring {
+    width: 120px;
+    height: 120px;
+    right: 10%;
+    top: auto;
+    bottom: 6%;
+  }
+
+  .layer--ring .ring {
+    mask: radial-gradient(farthest-side, transparent calc(100% - 18px), #000 calc(100% - 17px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .layer--sphere-lg {
+    width: 220px;
+    height: 220px;
+    left: 38.9%;
+    right: auto;
+    top: 7.8%;
+  }
+
+  .layer--sphere-sm {
+    width: 96px;
+    height: 96px;
+    left: 6.25%;
+    bottom: auto;
+    top: 77.8%;
+  }
+
+  .layer--ring {
+    width: 150px;
+    height: 150px;
+    left: 46.5%;
+    right: auto;
+    bottom: auto;
+    top: 70%;
+  }
+
+  .layer--ring .ring {
+    mask: radial-gradient(farthest-side, transparent calc(100% - 22px), #000 calc(100% - 21px));
+  }
+
+  .layer--star {
+    display: block;
+    left: 32.6%;
+    top: 25.5%;
+  }
+
+  .layer--chip {
+    display: block;
+    left: 6.8%;
+    top: 66%;
+  }
+
+  .layer--scrap {
+    display: block;
+    left: 22.6%;
+    top: 72.6%;
+  }
+}
+
+/* Acessibilidade (Motion spec · 09): sem flutuação, rotação ou parallax. */
+@media (prefers-reduced-motion: reduce) {
+  .float,
+  .sway--chip,
+  .sway--scrap,
+  .ring,
+  .star {
+    animation: none;
+  }
+
+  .layer {
+    transform: none;
+    transition: none;
+  }
+}

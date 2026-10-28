@@ -1,0 +1,42 @@
+<div class="page relative flex min-h-dvh flex-col overflow-hidden">
+  <ok-login-scene />
+
+  <div
+    class="relative z-10 mx-auto flex w-full max-w-[1248px] flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:gap-12"
+  >
+    <header class="px-6 pt-14 sm:px-10 lg:absolute lg:top-14 lg:left-0 lg:px-0 lg:pt-0">
+      <ok-brand-logo class="text-[32px] sm:text-[40px]" />
+    </header>
+
+    <section
+      class="hero px-6 pt-12 pb-10 sm:px-10 sm:pt-14 lg:px-0 lg:pt-0 lg:pb-8"
+      aria-labelledby="hero-title"
+    >
+      <p
+        class="enter enter-1 hidden text-[13px] font-semibold tracking-[0.18em] text-primary-strong sm:block"
+      >
+        <span aria-hidden="true">✦&nbsp;&nbsp;</span>A NOSTALGIA, REIMAGINADA
+      </p>
+      <h2
+        id="hero-title"
+        class="enter enter-2 mt-2 max-w-[260px] text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-ink sm:max-w-[620px] sm:text-[44px] sm:leading-[52px] lg:max-w-[740px] lg:text-display lg:leading-[66px]"
+      >
+        Seus amigos, scraps e comunidades. De volta.
+      </h2>
+      <p
+        class="enter enter-3 mt-6 hidden max-w-[480px] text-[17px] leading-7 text-ink-secondary sm:block"
+      >
+        Conecte-se com quem importa, descubra comunidades e deixe depoimentos — agora com uma
+        experiência leve, rápida e imersiva.
+      </p>
+    </section>
+
+    <main class="card-stack mt-auto sm:mx-auto sm:mt-0 sm:w-[440px] sm:pb-16 lg:pb-0">
+      <ok-login-form
+        [pending]="pending()"
+        [errorMessage]="errorMessage()"
+        (submitted)="onSubmit($event)"
+      />
+    </main>
+  </div>
+</div>
