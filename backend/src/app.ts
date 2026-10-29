@@ -5,9 +5,12 @@ import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { AppConfig } from './config/env.js';
+import { requireAuth } from './modules/auth/auth.middleware.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import type { AuthService } from './modules/auth/auth.service.js';
 import { SessionCookie } from './modules/auth/session-cookie.js';
+import type { PgSocialRepository } from './modules/social/social.repository.js';
+import { createSocialRouter } from './modules/social/social.routes.js';
 import { AppError } from './shared/errors/app-error.js';
 import { createErrorHandler, notFoundHandler } from './shared/http/error-handler.js';
 import { originGuard } from './shared/http/origin-guard.js';
@@ -17,6 +20,8 @@ export interface AppDependencies {
   config: AppConfig;
   logger: Logger;
   authService: AuthService;
+  /** Rede social (perfil, amigos, recados…). Ausente nos testes que só cobrem auth. */
+  socialRepository?: PgSocialRepository;
   /** Verificação de prontidão (ex.: `select 1` no banco). */
   healthCheck: () => Promise<void>;
   rateLimits?: {
@@ -116,15 +121,26 @@ export function createApp(deps: AppDependencies): Express {
     }
   });
 
+  const cookie = new SessionCookie(config);
   api.use(
     '/auth',
     createAuthRouter({
       service: authService,
-      cookie: new SessionCookie(config),
+      cookie,
       loginRateLimiter,
       signupRateLimiter,
     }),
   );
+
+  if (deps.socialRepository) {
+    api.use(
+      '/social',
+      createSocialRouter({
+        repository: deps.socialRepository,
+        requireAuth: requireAuth(authService, cookie),
+      }),
+    );
+  }
 
   app.use('/api', api);
   app.use(notFoundHandler);

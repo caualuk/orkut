@@ -3,6 +3,7 @@ import { loadConfig } from './config/env.js';
 import { createPool } from './db/pool.js';
 import { PgAuthRepository } from './modules/auth/auth.repository.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { PgSocialRepository } from './modules/social/social.repository.js';
 import { logger } from './shared/logger.js';
 import { argon2Hasher } from './shared/security/password.js';
 
@@ -19,6 +20,7 @@ const app = createApp({
   config,
   logger,
   authService,
+  socialRepository: new PgSocialRepository(db),
   healthCheck: async () => {
     await db.query('select 1');
   },

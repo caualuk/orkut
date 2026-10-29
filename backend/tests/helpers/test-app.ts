@@ -41,6 +41,7 @@ export function buildTestApp(
     healthCheck?: AppDependencies['healthCheck'];
     rateLimits?: AppDependencies['rateLimits'];
     env?: Partial<NodeJS.ProcessEnv>;
+    socialRepository?: AppDependencies['socialRepository'];
   } = {},
 ): TestContext {
   const config = testConfig(options.env);
@@ -60,6 +61,7 @@ export function buildTestApp(
     config,
     logger,
     authService: service,
+    socialRepository: options.socialRepository,
     healthCheck: options.healthCheck ?? (async () => {}),
     rateLimits: options.rateLimits ?? {
       windowMs: 60_000,
