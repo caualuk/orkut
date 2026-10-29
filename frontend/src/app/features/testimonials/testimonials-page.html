@@ -1,0 +1,149 @@
+<div class="flex flex-col gap-4 tab:gap-5">
+  <ok-page-header heading="Depoimentos" subtitle="O que seus amigos dizem sobre você">
+    <button
+      type="button"
+      class="ok-btn-primary max-tab:hidden"
+      (click)="write()"
+      data-testid="write-testimonial"
+    >
+      <mat-icon aria-hidden="true" fontIcon="edit" class="!size-4 !text-base" />
+      Escrever depoimento
+    </button>
+  </ok-page-header>
+
+  <div class="ok-tabs" role="tablist" aria-label="Depoimentos">
+    @for (item of tabs(); track item.id) {
+      <button
+        type="button"
+        role="tab"
+        class="ok-tab max-tab:flex-1 max-tab:justify-center"
+        [attr.aria-selected]="tab() === item.id"
+        (click)="tab.set(item.id)"
+        [attr.data-testid]="'testimonial-tab-' + item.id"
+      >
+        {{ item.label }}
+        @if (item.id === 'pendente') {
+          @if (item.count) {
+            <span class="ok-badge !h-5 !min-w-5 !px-1.5">{{ item.count }}</span>
+          }
+        } @else {
+          <span class="max-tab:hidden">({{ item.count }})</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Pedido de aprovação -->
+  @if (store.settings().allowTestimonials && tab() !== 'enviado') {
+    @for (item of pending(); track item.id) {
+      <section
+        class="pending ok-enter"
+        aria-label="Depoimento aguardando aprovação"
+        data-testid="pending-testimonial"
+      >
+        <div class="flex min-w-0 flex-1 items-center gap-4">
+          <ok-avatar
+            [tone]="item.tone"
+            [initials]="item.authorName.slice(0, 2)"
+            shape="tile"
+            [size]="52"
+          />
+          <div class="min-w-0">
+            <p class="font-bold text-ink">
+              {{ item.authorName.split(' ')[0] }} escreveu um depoimento para você
+            </p>
+            <p class="text-xs text-ink-muted">Aprove para que ele apareça no seu perfil.</p>
+          </div>
+        </div>
+        <div class="flex gap-3 max-tab:w-full">
+          <button
+            type="button"
+            class="hidden px-3 text-sm font-bold text-ink tab:block"
+            [attr.aria-expanded]="reading() === item.id"
+            (click)="reading.set(reading() === item.id ? null : item.id)"
+          >
+            Ler
+          </button>
+          <button
+            type="button"
+            class="ok-btn-outline !text-ink max-tab:flex-1"
+            (click)="reject(item)"
+          >
+            Recusar
+          </button>
+          <button
+            type="button"
+            class="ok-btn-primary max-tab:flex-1"
+            (click)="approve(item)"
+            data-testid="approve-testimonial"
+          >
+            Aprovar
+          </button>
+        </div>
+        @if (reading() === item.id || tab() === 'pendente') {
+          <blockquote class="w-full rounded-2xl bg-surface-variant p-4 text-sm text-ink-secondary">
+            “{{ item.text }}”
+          </blockquote>
+        }
+      </section>
+    }
+  }
+
+  @if (tab() !== 'pendente') {
+    <ul class="grid gap-4 tab:grid-cols-2 tab:gap-5" data-testid="testimonial-list">
+      @for (item of list(); track item.id; let i = $index) {
+        <li class="ok-card ok-enter flex flex-col p-6" [style.--i]="i">
+          <span class="quote" aria-hidden="true">“</span>
+          <blockquote class="mt-5 flex-1 text-[15px] leading-relaxed text-ink">
+            {{ item.text }}
+          </blockquote>
+          <div class="mt-4 flex items-center gap-3">
+            <ok-avatar [tone]="item.tone" [size]="32" />
+            <p class="flex-1 text-[13px] font-bold text-ink-secondary">
+              {{ item.status === 'enviado' ? 'Para ' + item.toName : item.authorName }} ·
+              {{ item.date }}
+            </p>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 text-xs font-bold text-primary-strong"
+              [attr.aria-pressed]="item.liked"
+              [attr.aria-label]="item.likes + ' curtidas — curtir depoimento'"
+              (click)="store.toggleTestimonialLike(item.id)"
+            >
+              <mat-icon
+                aria-hidden="true"
+                [fontIcon]="'favorite'"
+                class="!size-4 !text-base"
+                [class.opacity-60]="!item.liked"
+              />
+              {{ item.likes }}
+            </button>
+          </div>
+        </li>
+      } @empty {
+        <li class="ok-card p-8 text-center text-sm text-ink-muted tab:col-span-2">
+          {{
+            tab() === 'enviado'
+              ? 'Você ainda não escreveu depoimentos.'
+              : 'Nenhum depoimento ainda.'
+          }}
+        </li>
+      }
+    </ul>
+  } @else if (!pending().length) {
+    <p class="ok-card p-8 text-center text-sm text-ink-muted">
+      Nenhum depoimento aguardando aprovação.
+    </p>
+  }
+
+  @if (!store.settings().allowTestimonials) {
+    <p class="rounded-2xl bg-surface-variant p-4 text-sm text-ink-secondary">
+      Você desativou novos depoimentos em Configurações → Privacidade.
+    </p>
+  }
+</div>
+
+<button type="button" class="ok-fab tab:hidden" (click)="write()">
+  <mat-icon aria-hidden="true" fontIcon="edit" class="!size-4 !text-base" />
+  Escrever depoimento
+</button>
