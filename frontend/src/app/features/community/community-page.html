@@ -1,0 +1,279 @@
+@if (community(); as community) {
+  <div class="grid gap-4 tab:gap-6 lg:grid-cols-[minmax(0,1fr)_312px]">
+    <div class="flex min-w-0 flex-col gap-4 tab:gap-5">
+      <!-- Capa -->
+      <section class="ok-card ok-enter overflow-hidden" aria-labelledby="community-name">
+        <div class="cover" aria-hidden="true">
+          <span class="ring"></span>
+          <span class="ok-sphere-pink absolute -top-12 -right-10 size-44 tab:size-56"></span>
+          <span class="ok-sphere-pearl absolute right-[38%] bottom-6 size-10"></span>
+        </div>
+        <div class="relative flex flex-wrap items-end gap-4 px-4 pb-5 tab:px-6">
+          <span class="badge">
+            <ok-avatar [tone]="community.tone" shape="tile" [fluid]="true" [size]="88" />
+            <mat-icon aria-hidden="true" [fontIcon]="community.icon" class="badge-icon" />
+          </span>
+          <div class="min-w-0 flex-1 pt-2">
+            <h1 id="community-name" class="text-2xl font-bold text-ink">{{ community.name }}</h1>
+            <p class="text-sm text-ink-muted">
+              {{ community.category }} · {{ community.members }} membros ·
+              {{ community.visibility }}
+            </p>
+          </div>
+          <div class="flex w-full gap-2 tab:w-auto">
+            <button
+              type="button"
+              class="ok-btn-primary flex-1"
+              [class.!bg-none]="!community.joined"
+              [class.!bg-ink]="!community.joined"
+              [attr.aria-pressed]="community.joined"
+              (click)="toggleMembership()"
+              data-testid="toggle-membership"
+            >
+              @if (community.joined) {
+                <mat-icon aria-hidden="true" fontIcon="check" class="!size-4 !text-base" />
+                Participando
+              } @else {
+                + Participar
+              }
+            </button>
+            <button
+              type="button"
+              class="ok-btn-outline !px-3 tab:hidden"
+              aria-label="Compartilhar comunidade"
+              (click)="share()"
+            >
+              <mat-icon aria-hidden="true" fontIcon="share" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div class="ok-tabs" role="tablist" aria-label="Seções da comunidade">
+        @for (item of tabs; track item.id) {
+          <button
+            type="button"
+            role="tab"
+            class="ok-tab"
+            [attr.aria-selected]="tab() === item.id"
+            (click)="tab.set(item.id)"
+            [attr.data-testid]="'community-tab-' + item.id"
+          >
+            {{ item.label }}
+          </button>
+        }
+      </div>
+
+      <section class="ok-card p-4 tab:p-6" role="tabpanel">
+        @switch (tab()) {
+          @case ('forum') {
+            <div class="mb-3 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-ink">Tópicos ({{ community.topics.length }})</h2>
+              <button
+                type="button"
+                class="ok-btn-tonal"
+                (click)="newTopic()"
+                data-testid="new-topic"
+              >
+                + Novo tópico
+              </button>
+            </div>
+            <ul data-testid="topic-list">
+              @for (topic of community.topics; track topic.id) {
+                <li class="topic">
+                  @if (topic.pinned) {
+                    <span
+                      class="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-container text-primary"
+                      role="img"
+                      aria-label="Tópico fixo"
+                    >
+                      <mat-icon aria-hidden="true" fontIcon="flag" class="!size-5 !text-xl" />
+                    </span>
+                  } @else {
+                    <ok-avatar [tone]="topic.tone" [size]="40" />
+                  }
+                  <div class="min-w-0 flex-1">
+                    <p class="font-bold text-ink">{{ topic.title }}</p>
+                    <p class="text-xs text-ink-muted">
+                      por {{ topic.author }} · {{ topic.activity }}
+                    </p>
+                  </div>
+                  @if (topic.isNew) {
+                    <span
+                      class="rounded-full bg-primary-bold px-2 py-0.5 text-[10px] font-bold text-white"
+                      >novo</span
+                    >
+                  }
+                  <span class="flex items-center gap-1 text-xs font-bold text-ink-secondary">
+                    <mat-icon aria-hidden="true" fontIcon="mail" class="!size-3.5 !text-sm" />{{
+                      topic.replies
+                    }}
+                  </span>
+                </li>
+              } @empty {
+                <li class="py-8 text-center text-sm text-ink-muted">
+                  Nenhum tópico ainda. Que tal começar um?
+                </li>
+              }
+            </ul>
+          }
+          @case ('enquetes') {
+            @for (poll of community.polls; track poll.id) {
+              <fieldset class="mb-6 last:mb-0">
+                <legend class="mb-3 font-bold text-ink">{{ poll.question }}</legend>
+                <div class="flex flex-col gap-2">
+                  @for (option of poll.options; track option.label; let index = $index) {
+                    @let pct = percent(poll, option.votes);
+                    <button
+                      type="button"
+                      class="poll-option"
+                      [class.poll-option--voted]="poll.votedIndex === index"
+                      [disabled]="poll.votedIndex !== null"
+                      (click)="store.vote(community.id, poll.id, index)"
+                    >
+                      @if (poll.votedIndex !== null) {
+                        <span class="poll-bar" [style.width.%]="pct" aria-hidden="true"></span>
+                      }
+                      <span class="relative flex-1 text-left">{{ option.label }}</span>
+                      @if (poll.votedIndex !== null) {
+                        <span class="relative font-bold">{{ pct }}%</span>
+                      }
+                    </button>
+                  }
+                </div>
+                <p class="mt-2 text-xs text-ink-muted">
+                  {{ totalVotes(poll) }} votos{{
+                    poll.votedIndex !== null ? ' · você já votou' : ''
+                  }}
+                </p>
+              </fieldset>
+            } @empty {
+              <p class="py-8 text-center text-sm text-ink-muted">Nenhuma enquete aberta.</p>
+            }
+          }
+          @case ('eventos') {
+            <ul class="flex flex-col gap-3">
+              @for (event of community.events; track event.id) {
+                <li class="flex items-center gap-4 rounded-2xl bg-surface-variant p-4">
+                  <mat-icon aria-hidden="true" fontIcon="event" class="text-primary" />
+                  <div class="min-w-0 flex-1">
+                    <p class="font-bold text-ink">{{ event.title }}</p>
+                    <p class="text-xs text-ink-muted">{{ event.date }} · {{ event.place }}</p>
+                  </div>
+                  <button
+                    type="button"
+                    class="ok-btn-outline"
+                    [attr.aria-pressed]="event.going"
+                    (click)="store.toggleEventAttendance(community.id, event.id)"
+                  >
+                    {{ event.going ? 'Vou ✓' : 'Vou participar' }}
+                  </button>
+                </li>
+              } @empty {
+                <li class="py-8 text-center text-sm text-ink-muted">Nenhum evento marcado.</li>
+              }
+            </ul>
+          }
+          @case ('membros') {
+            <p class="mb-4 text-sm text-ink-secondary">{{ community.members }} membros</p>
+            <ul class="grid grid-cols-3 gap-4 tab:grid-cols-4">
+              @for (friend of memberFriends(); track friend.id) {
+                <li class="flex flex-col items-center gap-1.5 text-center">
+                  <ok-avatar
+                    [tone]="friend.tone"
+                    [initials]="friend.initials"
+                    shape="tile"
+                    [size]="64"
+                  />
+                  <span class="text-xs text-ink-secondary">{{ friend.name }}</span>
+                </li>
+              } @empty {
+                <li class="col-span-full text-sm text-ink-muted">
+                  Nenhum amigo seu participa ainda.
+                </li>
+              }
+            </ul>
+          }
+        }
+      </section>
+    </div>
+
+    <!-- Coluna lateral -->
+    <aside class="flex flex-col gap-4 max-lg:hidden" aria-label="Sobre a comunidade">
+      <section class="ok-card p-6">
+        <h2 class="mb-3 text-lg font-bold text-ink">Sobre</h2>
+        <p class="text-sm leading-relaxed text-ink-secondary">{{ community.about }}</p>
+        <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1.5 text-xs text-ink-muted">
+          <dt>Criada em</dt>
+          <dd>{{ community.createdAt }}</dd>
+          <dt>Dono</dt>
+          <dd>{{ community.owner }}</dd>
+          <dt>Idioma</dt>
+          <dd>{{ community.language }}</dd>
+          <dt>Local</dt>
+          <dd>{{ community.location }}</dd>
+        </dl>
+      </section>
+
+      <section class="ok-card p-6">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-ink">Membros</h2>
+          <button
+            type="button"
+            class="text-[13px] font-bold text-primary-strong"
+            (click)="tab.set('membros')"
+          >
+            ver todos
+          </button>
+        </div>
+        <div class="flex">
+          @for (friend of memberFriends(); track friend.id) {
+            <ok-avatar
+              class="-mr-2 ring-[3px] ring-white"
+              [tone]="friend.tone"
+              [size]="44"
+              [label]="friend.name"
+            />
+          }
+          <span
+            class="grid size-11 place-items-center rounded-full bg-[#1c1b1f] text-[11px] font-bold text-white ring-[3px] ring-white"
+          >
+            +{{ community.members.split(' ')[0] }}
+          </span>
+        </div>
+        @if (community.friendsInside.length) {
+          <p class="mt-4 text-[13px] text-ink-secondary">
+            {{ community.friendsInside.slice(0, 2).join(', ') }} e mais amigos participam
+          </p>
+        }
+      </section>
+
+      @if (related().length) {
+        <section class="ok-card p-6">
+          <h2 class="mb-3 text-lg font-bold text-ink">Comunidades relacionadas</h2>
+          <ul class="flex flex-col gap-2.5">
+            @for (item of related(); track item.id) {
+              <li>
+                <a
+                  [routerLink]="['/comunidades', item.id]"
+                  class="flex items-center gap-2 text-sm text-ink hover:text-primary-strong"
+                >
+                  <mat-icon aria-hidden="true" [fontIcon]="item.icon" class="!size-4 !text-base" />
+                  {{ item.name }}
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </aside>
+  </div>
+} @else {
+  <section class="ok-card p-10 text-center">
+    <h1 class="text-xl font-bold text-ink">Comunidade não encontrada</h1>
+    <p class="mt-2 text-sm text-ink-secondary">
+      Ela pode ter sido removida ou o endereço está incorreto.
+    </p>
+    <a routerLink="/home" class="ok-btn-primary mt-6">Voltar para o início</a>
+  </section>
+}

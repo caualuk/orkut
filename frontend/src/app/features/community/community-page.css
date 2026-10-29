@@ -1,0 +1,97 @@
+:host {
+  display: block;
+}
+
+.cover {
+  position: relative;
+  height: 110px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2b2930 0%, #1c1b1f 100%);
+}
+
+@media (min-width: 37.5rem) {
+  .cover {
+    height: 150px;
+  }
+}
+
+.ring {
+  position: absolute;
+  left: 40px;
+  top: 30px;
+  width: 70px;
+  height: 70px;
+  border-radius: 999px;
+  border: 8px solid #3a3840;
+}
+
+.badge {
+  position: relative;
+  display: grid;
+  width: 76px;
+  margin-top: -44px;
+  place-items: center;
+  border-radius: 26px;
+  border: 5px solid #fff;
+  box-shadow: 0 14px 28px rgb(28 27 31 / 18%);
+}
+
+@media (min-width: 37.5rem) {
+  .badge {
+    width: 104px;
+    margin-top: -60px;
+  }
+}
+
+.badge-icon {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  font-size: 40px;
+  color: #fff;
+}
+
+.topic {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+}
+
+.topic + .topic {
+  border-top: 1px solid var(--color-divider);
+}
+
+.poll-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  overflow: hidden;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-outline);
+  font-size: 14px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.poll-option:disabled {
+  cursor: default;
+}
+
+.poll-option:not(:disabled):hover {
+  border-color: var(--color-primary);
+}
+
+.poll-option--voted {
+  border-color: var(--color-primary);
+}
+
+.poll-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-primary-container);
+  transition: width 600ms var(--ease-emphasized);
+}
