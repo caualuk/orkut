@@ -1,0 +1,226 @@
+<div class="shell relative min-h-dvh bg-background">
+  <div class="blob blob--pink" aria-hidden="true"></div>
+  <div class="blob blob--lavender" aria-hidden="true"></div>
+
+  <a href="#conteudo" class="skip-link">Pular para o conteúdo</a>
+
+  <!-- Navigation Rail (medium) -->
+  <aside class="rail" aria-label="Navegação principal">
+    <a routerLink="/home" class="rail-logo" aria-label="orkut — início">o</a>
+    <a routerLink="/recados" class="rail-fab" aria-label="Escrever scrap" data-testid="rail-fab">
+      <mat-icon aria-hidden="true" fontIcon="edit" />
+    </a>
+    <nav class="mt-2 flex flex-col items-center gap-1">
+      @for (item of railNav; track item.label) {
+        @let active = isActive(item);
+        @let count = item | navCounter;
+        <a
+          [routerLink]="item.link"
+          class="rail-item"
+          [class.rail-item--active]="active"
+          [attr.aria-current]="active ? 'page' : null"
+        >
+          <span class="rail-pill">
+            <mat-icon aria-hidden="true" [fontIcon]="item.icon" />
+            @if (count) {
+              <span class="dot" role="img" [attr.aria-label]="count + ' novos'"></span>
+            }
+          </span>
+          {{ item.label }}
+        </a>
+      }
+      <button type="button" class="rail-item" (click)="openDrawer()" aria-haspopup="dialog">
+        <span class="rail-pill"><mat-icon aria-hidden="true" fontIcon="menu" /></span>
+        Mais
+      </button>
+    </nav>
+  </aside>
+
+  <div class="relative tab:max-lg:pl-[88px]">
+    <!-- Top App Bar -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <!-- expanded: logo + navegação em pílulas -->
+        <a routerLink="/home" class="hidden lg:block" aria-label="orkut — início">
+          <ok-brand-logo [size]="30" />
+        </a>
+        <nav class="hidden items-center gap-1 lg:flex" aria-label="Navegação principal">
+          @for (item of primaryNav; track item.label) {
+            @let active = isActive(item);
+            <a
+              [routerLink]="item.link"
+              class="pill"
+              [class.pill--active]="active"
+              [attr.aria-current]="active ? 'page' : null"
+              >{{ item.label }}</a
+            >
+          }
+        </nav>
+
+        <!-- compact/medium: título da seção (logo na Home do mobile) -->
+        <div class="flex min-w-0 items-center gap-2 lg:hidden">
+          @if (routeData().back) {
+            <a routerLink="/home" class="icon-btn tab:!hidden" aria-label="Voltar para o início">
+              <mat-icon aria-hidden="true" fontIcon="arrow_back" />
+            </a>
+          }
+          @if (routeData().heading) {
+            <span
+              class="truncate text-xl font-bold text-ink tab:text-2xl"
+              data-testid="topbar-title"
+            >
+              {{ heading() }}
+            </span>
+          } @else {
+            <a routerLink="/home" class="tab:hidden" aria-label="orkut — início">
+              <ok-brand-logo [size]="26" />
+            </a>
+            <span class="hidden text-2xl font-bold text-ink tab:inline">Início</span>
+          }
+        </div>
+
+        <div class="flex-1"></div>
+
+        <ok-global-search class="hidden w-[300px] tab:block" />
+        <button
+          type="button"
+          class="icon-btn icon-btn--filled tab:!hidden"
+          aria-label="Pesquisar"
+          [attr.aria-expanded]="mobileSearchOpen()"
+          (click)="mobileSearchOpen.set(!mobileSearchOpen())"
+        >
+          <mat-icon aria-hidden="true" fontIcon="search" />
+        </button>
+        <ok-music-toggle />
+
+        <button
+          type="button"
+          class="me tab:max-lg:hidden"
+          [matMenuTriggerFor]="accountMenu"
+          aria-label="Abrir menu da conta"
+          data-testid="account-menu"
+        >
+          <ok-profile-photo [src]="store.profile().photoUrl" [round]="true" alt="" />
+        </button>
+      </div>
+      @if (mobileSearchOpen()) {
+        <div class="px-4 pb-3 tab:hidden">
+          <ok-global-search />
+        </div>
+      }
+    </header>
+
+    <mat-menu #accountMenu="matMenu" xPosition="before">
+      <div class="px-4 pt-2 pb-1 text-sm font-semibold text-ink">{{ store.displayName() }}</div>
+      <a mat-menu-item routerLink="/perfil/editar">
+        <mat-icon aria-hidden="true" fontIcon="edit" />Editar perfil
+      </a>
+      <a mat-menu-item routerLink="/configuracoes">
+        <mat-icon aria-hidden="true" fontIcon="settings" />Configurações
+      </a>
+      <button mat-menu-item type="button" (click)="logout()" data-testid="logout-button">
+        <mat-icon aria-hidden="true" fontIcon="logout" />Sair
+      </button>
+    </mat-menu>
+
+    <div
+      class="mx-auto w-full max-w-[1296px] px-4 pt-4 pb-28 tab:px-6 tab:pt-6 tab:pb-10 lg:grid lg:grid-cols-[264px_minmax(0,1fr)] lg:gap-6 lg:pt-8"
+    >
+      <aside class="hidden flex-col gap-4 lg:flex" aria-label="Seu perfil e atalhos">
+        <ok-profile-card />
+        <div class="ok-card p-2.5">
+          <ok-profile-menu />
+        </div>
+      </aside>
+
+      <main id="conteudo" tabindex="-1" class="min-w-0 outline-none">
+        <router-outlet />
+      </main>
+    </div>
+
+    <footer class="footer" aria-label="Rodapé">
+      <ok-brand-logo [size]="22" [viewTransition]="false" />
+      <nav class="flex flex-wrap gap-x-5 gap-y-1" aria-label="Links institucionais">
+        @for (link of footerLinks; track link) {
+          <a href="#" (click)="$event.preventDefault()" class="hover:text-ink">{{ link }}</a>
+        }
+      </nav>
+      <span class="ml-auto whitespace-nowrap">
+        © {{ year }} · feito com <span role="img" aria-label="amor">♥</span>
+      </span>
+    </footer>
+  </div>
+
+  <!-- Navigation Bar (compact) -->
+  @if (!routeData().hideBottomNav) {
+    <nav class="bottom-nav" aria-label="Navegação principal">
+      @for (item of bottomNav; track item.label) {
+        @let active = isActive(item);
+        @let count = item | navCounter;
+        <a
+          [routerLink]="item.link"
+          class="bottom-item"
+          [class.bottom-item--active]="active"
+          [attr.aria-current]="active ? 'page' : null"
+        >
+          <span class="bottom-pill">
+            <mat-icon aria-hidden="true" [fontIcon]="item.icon" />
+            @if (count) {
+              <span class="dot" role="img" [attr.aria-label]="count + ' novos'"></span>
+            }
+          </span>
+          {{ item.label }}
+        </a>
+      }
+      <button
+        type="button"
+        class="bottom-item"
+        [class.bottom-item--active]="drawerOpen()"
+        aria-haspopup="dialog"
+        (click)="openDrawer()"
+        data-testid="open-drawer"
+      >
+        <span class="bottom-pill"><mat-icon aria-hidden="true" fontIcon="menu" /></span>
+        Menu
+      </button>
+    </nav>
+  }
+
+  <!-- Navigation Drawer modal (compact/medium) -->
+  @if (drawerOpen()) {
+    <div class="scrim" (click)="closeDrawer()" aria-hidden="true"></div>
+    <div
+      class="drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      data-testid="drawer"
+    >
+      <div class="flex items-center gap-3 px-2 pb-4">
+        <ok-profile-photo class="w-14 shrink-0" [src]="store.profile().photoUrl" alt="" />
+        <div class="min-w-0">
+          <p class="truncate font-bold text-ink">{{ store.displayName() }}</p>
+          <a routerLink="/perfil/editar" class="text-xs font-semibold text-primary-strong">
+            <mat-icon aria-hidden="true" fontIcon="edit" class="!size-3 !text-xs" /> Editar perfil
+          </a>
+        </div>
+        <button
+          type="button"
+          class="icon-btn ml-auto"
+          aria-label="Fechar menu"
+          (click)="closeDrawer()"
+        >
+          <mat-icon aria-hidden="true" fontIcon="close" />
+        </button>
+      </div>
+      <ok-profile-menu (navigated)="closeDrawer()" />
+      <hr class="my-2 border-divider" />
+      <button type="button" class="logout" (click)="logout()" data-testid="drawer-logout">
+        <mat-icon aria-hidden="true" fontIcon="logout" />
+        Sair
+      </button>
+    </div>
+  }
+</div>
