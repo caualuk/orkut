@@ -13,10 +13,12 @@
   --color-primary-soft: #f06292;
   --color-primary-deep: #ad1457;
   --color-primary-container: #fdecf2;
+  /* Rosa para texto pequeno/fundo de badge: #E91E63 não atinge 4,5:1 com branco. */
+  --color-primary-bold: #d81b60;
 
   --color-ink: #1c1b1f;
   --color-ink-secondary: #49454f;
-  --color-ink-muted: #79747e;
+  --color-ink-muted: #6c6775;
   --color-outline: #cac4d0;
   --color-divider: #eceaef;
 
@@ -41,6 +43,39 @@
 
   /* Material emphasized easing. */
   --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Window size classes do Material 3 (frame "Responsividade · Breakpoints"):
+     compact < 600 · medium 600–1023 (`tab:`) · expanded ≥ 1024 (`lg:`). */
+  --breakpoint-tab: 37.5rem;
+
+  --color-success: #2e7d32;
+  --color-danger: #c62828;
+  --color-danger-container: #fdf1f1;
+  --shadow-soft: 0 1px 3px rgb(28 27 31 / 4%), 0 10px 28px rgb(28 27 31 / 7%);
+}
+
+/*
+ * Tema escuro (Configurações → Aparência). Redefine somente os tokens: as
+ * utilities do Tailwind leem as variáveis, então os componentes não mudam.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-ink: #f4eff4;
+  --color-ink-secondary: #cac4d0;
+  --color-ink-muted: #948f99;
+  --color-outline: #49454f;
+  --color-divider: #2b2930;
+  --color-surface: #1f1d23;
+  --color-surface-variant: #2b2930;
+  --color-background: #141218;
+  --color-primary-container: #4a1530;
+  --color-danger-container: #3a1d1d;
+  --shadow-soft: 0 1px 3px rgb(0 0 0 / 30%), 0 10px 28px rgb(0 0 0 / 35%);
+}
+
+:root[data-theme='dark'] body {
+  background-color: var(--color-background);
+  color: var(--color-ink);
 }
 
 @layer base {
@@ -52,6 +87,292 @@
   :focus-visible {
     outline: 3px solid var(--color-primary);
     outline-offset: 2px;
+  }
+}
+
+/*
+ * Componentes visuais compartilhados pelas telas internas (Spec · Padrões & 3D).
+ * Ficam globais para não estourar o orçamento de CSS por componente.
+ */
+@layer components {
+  /* Botão primário com "base" de 6px (efeito tecla) — Motion spec · 06. */
+  .ok-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    background: linear-gradient(135deg, #f06292 0%, #d81b60 100%);
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 33%),
+      0 4px 0 rgb(173 20 87 / 35%),
+      0 10px 20px rgb(233 30 99 / 25%);
+    transition:
+      transform 150ms var(--ease-emphasized),
+      box-shadow 150ms var(--ease-emphasized);
+    cursor: pointer;
+  }
+
+  .ok-btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  .ok-btn-primary:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 25%),
+      0 1px 0 rgb(173 20 87 / 35%),
+      0 4px 10px rgb(233 30 99 / 22%);
+  }
+
+  .ok-btn-primary:disabled {
+    cursor: not-allowed;
+    filter: saturate(0.4);
+    opacity: 0.7;
+  }
+
+  /* FAB extended do mobile, acima da Navigation Bar (Escrever scrap / depoimento). */
+  .ok-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    z-index: 24;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 52px;
+    padding: 0 20px;
+    border-radius: 16px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f06292 0%, #d81b60 100%);
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 33%),
+      0 5px 0 rgb(173 20 87 / 35%),
+      0 14px 26px rgb(233 30 99 / 30%);
+    cursor: pointer;
+  }
+
+  /* Outlined Button. */
+  .ok-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 18px;
+    border-radius: 12px;
+    border: 1.5px solid var(--color-outline);
+    background: var(--color-surface);
+    color: var(--color-primary-strong);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition:
+      background-color 150ms var(--ease-emphasized),
+      border-color 150ms var(--ease-emphasized);
+  }
+
+  .ok-btn-outline:hover {
+    border-color: var(--color-primary-soft);
+    background: var(--color-primary-container);
+  }
+
+  /* Tonal Button (fundo neutro). */
+  .ok-btn-tonal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 16px;
+    border-radius: 12px;
+    background: var(--color-surface-variant);
+    color: var(--color-ink);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 150ms var(--ease-emphasized);
+  }
+
+  .ok-btn-tonal:hover {
+    background: color-mix(in srgb, var(--color-surface-variant) 80%, var(--color-ink) 8%);
+  }
+
+  /* Chip de filtro: selecionado vira grafite (Feeds, Amigos). */
+  .ok-chip {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid var(--color-outline);
+    background: var(--color-surface);
+    color: var(--color-ink-secondary);
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms var(--ease-emphasized);
+  }
+
+  .ok-chip[aria-pressed='true'],
+  .ok-chip[aria-selected='true'] {
+    border-color: var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-surface);
+    font-weight: 600;
+  }
+
+  /* Abas com indicador rosa (Editar perfil, Depoimentos, Comunidade). */
+  .ok-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--color-divider);
+    scrollbar-width: none;
+  }
+
+  .ok-tab {
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    font-size: 14px;
+    color: var(--color-ink-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .ok-tab[aria-selected='true'] {
+    color: var(--color-primary-strong);
+    font-weight: 700;
+  }
+
+  .ok-tab[aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-primary);
+  }
+
+  /* Campo de texto simples (busca, composer, formulários das telas internas). */
+  .ok-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--color-outline);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 15px;
+    outline: none;
+    transition: box-shadow 150ms var(--ease-emphasized);
+  }
+
+  .ok-input:focus,
+  .ok-input:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgb(233 30 99 / 20%);
+  }
+
+  .ok-input::placeholder {
+    color: var(--color-ink-muted);
+  }
+
+  .ok-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--color-ink-secondary);
+  }
+
+  /* Badge numérico rosa. */
+  .ok-badge {
+    display: inline-flex;
+    min-width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--color-primary-bold);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Card escuro com esfera rosa (Sorte de hoje, Aniversários, capa de comunidade). */
+  .ok-dark-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #2b2930 0%, #1c1b1f 100%);
+    color: #fff;
+  }
+
+  /* Esferas 3D: gradiente radial + inner shadows com luz superior esquerda. */
+  .ok-sphere-pink {
+    border-radius: 9999px;
+    background: radial-gradient(circle at 35% 35%, #ffe3ee 0%, #f06292 45%, #c2185b 100%);
+    box-shadow:
+      inset -18px -22px 40px rgb(136 14 79 / 70%),
+      inset 14px 14px 24px rgb(255 255 255 / 60%);
+  }
+
+  .ok-sphere-pearl {
+    border-radius: 9999px;
+    background: radial-gradient(circle at 35% 30%, #ffffff 0%, #eceaf0 55%, #b9b4c2 100%);
+    box-shadow:
+      inset -8px -10px 18px rgb(110 104 122 / 55%),
+      inset 6px 6px 10px rgb(255 255 255 / 80%),
+      0 10px 20px rgb(28 27 31 / 12%);
+  }
+
+  /* Interruptor (Material Switch) com as cores do design. */
+  .ok-switch {
+    --mat-slide-toggle-selected-track-color: var(--color-primary);
+    --mat-slide-toggle-selected-hover-track-color: var(--color-primary-strong);
+    --mat-slide-toggle-selected-focus-track-color: var(--color-primary-strong);
+    --mat-slide-toggle-selected-pressed-track-color: var(--color-primary-strong);
+    --mat-slide-toggle-selected-handle-color: #fff;
+    --mat-slide-toggle-selected-hover-handle-color: #fff;
+    --mat-slide-toggle-selected-focus-handle-color: #fff;
+    --mat-slide-toggle-selected-pressed-handle-color: #fff;
+    --mat-slide-toggle-selected-icon-color: var(--color-primary);
+  }
+}
+
+/* Card branco com raio 28 e elevação em 2 camadas (key + ambient). Utility para aceitar variantes (tab:ok-card). */
+@utility ok-card {
+  background: var(--color-surface);
+  border-radius: 28px;
+  box-shadow: var(--shadow-soft);
+}
+
+/* Entrada dos cards em cascata (Motion spec · 07: 60ms entre cards). */
+@utility ok-enter {
+  animation: ok-card-in 450ms var(--ease-emphasized) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+@keyframes ok-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
   }
 }
 

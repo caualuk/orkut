@@ -10,7 +10,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   host: {
     class: 'inline-block font-bold leading-none tracking-[-0.02em] select-none',
     '[style.font-size.px]': 'size()',
-    '[style.view-transition-name]': '"brand-logo"',
+    '[style.view-transition-name]': 'viewTransition() ? "brand-logo" : "none"',
   },
   template: `<span class="logo">orkut</span>`,
   styles: `
@@ -24,4 +24,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class BrandLogo {
   readonly size = input<number>();
+  /** Só um logo por página pode participar da transição (nomes devem ser únicos). */
+  readonly viewTransition = input(true);
 }
