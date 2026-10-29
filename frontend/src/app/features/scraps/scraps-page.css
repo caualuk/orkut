@@ -1,0 +1,135 @@
+:host {
+  display: block;
+}
+
+.segmented {
+  display: flex;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface);
+}
+
+@media (max-width: 37.49rem) {
+  .segmented {
+    width: 100%;
+  }
+
+  .segment {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 38px;
+  padding: 0 18px;
+  font-size: 13px;
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+}
+
+.segment + .segment {
+  border-left: 1px solid var(--color-outline);
+}
+
+.segment[aria-selected='true'] {
+  background: var(--color-primary-container);
+  color: var(--color-primary-strong);
+  font-weight: 700;
+}
+
+.composer {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--color-divider);
+  background: var(--color-surface-variant);
+}
+
+.composer:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgb(233 30 99 / 20%);
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--color-ink-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tool:hover {
+  background: var(--color-surface);
+}
+
+.tool mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.scrap {
+  display: flex;
+  gap: 16px;
+}
+
+@media (min-width: 37.5rem) {
+  .scrap {
+    padding: 24px 0;
+  }
+
+  .scrap + .scrap {
+    border-top: 1px solid var(--color-divider);
+  }
+
+  .scrap:first-child {
+    padding-top: 4px;
+  }
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.action:hover {
+  color: var(--color-ink);
+}
+
+.action mat-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+.page-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--color-surface-variant);
+  color: var(--color-ink-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.page-btn--active {
+  background: var(--color-ink);
+  color: var(--color-surface);
+  font-weight: 700;
+}

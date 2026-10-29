@@ -1,0 +1,278 @@
+<div class="flex flex-col gap-4 tab:gap-5">
+  <ok-page-header
+    heading="Recados"
+    [subtitle]="store.receivedScraps().length + ' recados · ' + store.unreadScraps() + ' novos'"
+  >
+    <div class="segmented" role="tablist" aria-label="Filtrar recados">
+      @for (option of filters; track option.id) {
+        <button
+          type="button"
+          role="tab"
+          class="segment"
+          [attr.aria-selected]="filter() === option.id"
+          (click)="filter.set(option.id)"
+          [attr.data-testid]="'scrap-filter-' + option.id"
+        >
+          @if (filter() === option.id) {
+            <mat-icon aria-hidden="true" fontIcon="check" class="!size-4 !text-base" />
+          }
+          {{ option.label }}
+        </button>
+      }
+    </div>
+  </ok-page-header>
+
+  <!-- Composer -->
+  <section
+    class="ok-card flex gap-4 p-4 tab:p-6"
+    [class.max-tab:hidden]="!composeOpen()"
+    aria-label="Escrever recado"
+  >
+    <ok-avatar class="max-tab:!hidden" tone="blue" [size]="48" />
+    <form class="composer flex-1" (submit)="$event.preventDefault(); send()">
+      <label for="scrap-composer" class="sr-only">
+        Escreva um recado {{ recipient() ? 'para ' + recipient()!.name : '' }}
+      </label>
+      <textarea
+        #composer
+        id="scrap-composer"
+        rows="2"
+        class="w-full resize-none bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-muted"
+        [placeholder]="
+          'Escreva um recado para ' + (recipient()?.shortName ?? store.firstName()) + '…'
+        "
+        [attr.maxlength]="maxLength"
+        [value]="draft()"
+        (input)="draft.set($any($event.target).value)"
+        (keydown.control.enter)="send()"
+        data-testid="scrap-composer"
+      ></textarea>
+      <div class="mt-2 flex flex-wrap items-center gap-1">
+        <button
+          type="button"
+          class="tool font-bold"
+          (click)="format('*')"
+          aria-label="Negrito"
+          matTooltip="Negrito"
+        >
+          B
+        </button>
+        <button
+          type="button"
+          class="tool italic"
+          (click)="format('_')"
+          aria-label="Itálico"
+          matTooltip="Itálico"
+        >
+          I
+        </button>
+        <button
+          type="button"
+          class="tool underline"
+          (click)="format('~')"
+          aria-label="Sublinhado"
+          matTooltip="Sublinhado"
+        >
+          U
+        </button>
+        <button
+          type="button"
+          class="tool"
+          (click)="insert(' 😊')"
+          aria-label="Inserir emoji"
+          matTooltip="Emoji"
+        >
+          <mat-icon aria-hidden="true" fontIcon="sentiment_satisfied" />
+        </button>
+        <button
+          type="button"
+          class="tool"
+          (click)="insert(' 📷')"
+          aria-label="Inserir foto"
+          matTooltip="Foto"
+        >
+          <mat-icon aria-hidden="true" fontIcon="image" />
+        </button>
+        <button
+          type="button"
+          class="tool"
+          (click)="insert(' 🎵')"
+          aria-label="Inserir música"
+          matTooltip="Música"
+        >
+          <mat-icon aria-hidden="true" fontIcon="music_note" />
+        </button>
+        <span class="flex-1"></span>
+        <span class="mr-2 flex items-center gap-1 text-xs text-ink-secondary">
+          <mat-icon aria-hidden="true" fontIcon="visibility" class="!size-4 !text-base" />
+          {{ visibilityLabel() }}
+        </span>
+        <button
+          type="submit"
+          class="ok-btn-primary"
+          [disabled]="!draft().trim()"
+          data-testid="send-scrap"
+        >
+          Enviar scrap
+          <mat-icon aria-hidden="true" fontIcon="send" class="!size-4 !text-base" />
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Lista -->
+  <section class="flex flex-col gap-3 tab:ok-card tab:gap-0 tab:p-6" aria-label="Lista de recados">
+    <ul class="flex flex-col gap-3 tab:gap-0" data-testid="scrap-list">
+      @for (scrap of visible(); track scrap.id; let i = $index) {
+        <li
+          class="scrap ok-enter max-tab:ok-card max-tab:p-4"
+          [style.--i]="i"
+          data-testid="scrap-item"
+        >
+          <ok-avatar
+            class="max-tab:!hidden"
+            [tone]="scrap.tone"
+            [initials]="
+              (scrap.direction === 'enviado' ? scrap.toName : scrap.authorName)?.[0] ?? ''
+            "
+            shape="tile"
+            [size]="48"
+          />
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <ok-avatar
+                class="tab:!hidden"
+                [tone]="scrap.tone"
+                [initials]="scrap.authorName[0] ?? ''"
+                shape="tile"
+                [size]="32"
+              />
+              <p class="text-[15px] text-ink">
+                <span class="font-bold">
+                  {{ scrap.direction === 'enviado' ? 'Para ' + scrap.toName : scrap.authorName }}
+                </span>
+                <span class="text-xs text-ink-muted"> · {{ scrap.createdAt }}</span>
+              </p>
+              @if (!scrap.read) {
+                <span
+                  class="ml-auto size-2.5 rounded-full bg-primary"
+                  role="img"
+                  aria-label="não lido"
+                ></span>
+              }
+            </div>
+            <p class="mt-2 text-[15px] leading-relaxed text-ink">{{ scrap.text }}</p>
+            @if (scrap.imageTone) {
+              <div
+                class="mt-3 aspect-[16/10] w-full max-w-[220px] rounded-2xl shadow-md tab:aspect-auto tab:h-[124px]"
+                [style.background]="gradients[scrap.imageTone]"
+                role="img"
+                aria-label="Imagem anexada ao recado"
+              ></div>
+            }
+            @for (reply of scrap.replies; track $index) {
+              <p class="mt-2 rounded-xl bg-surface-variant px-3 py-2 text-sm text-ink-secondary">
+                <strong class="text-ink">Você:</strong> {{ reply }}
+              </p>
+            }
+            <div class="mt-2 flex items-center gap-4 text-xs font-semibold text-ink-secondary">
+              @if (scrap.direction === 'recebido') {
+                <button
+                  type="button"
+                  class="action"
+                  (click)="toggleReply(scrap)"
+                  [attr.aria-expanded]="replyingTo() === scrap.id"
+                >
+                  <mat-icon aria-hidden="true" fontIcon="reply" /> Responder
+                </button>
+              }
+              <button
+                type="button"
+                class="action"
+                [class.text-primary-strong]="scrap.liked"
+                [attr.aria-pressed]="scrap.liked"
+                (click)="store.toggleScrapLike(scrap.id)"
+              >
+                <mat-icon aria-hidden="true" fontIcon="favorite" />
+                Curtir{{ scrap.likes ? ' (' + scrap.likes + ')' : '' }}
+              </button>
+              <button type="button" class="action max-tab:!hidden" (click)="remove(scrap)">
+                <mat-icon aria-hidden="true" fontIcon="close" /> Excluir
+              </button>
+            </div>
+            @if (replyingTo() === scrap.id) {
+              <form class="mt-3 flex gap-2" (submit)="$event.preventDefault(); sendReply(scrap)">
+                <label class="sr-only" [for]="'reply-' + scrap.id"
+                  >Responder a {{ scrap.authorName }}</label
+                >
+                <input
+                  [id]="'reply-' + scrap.id"
+                  class="ok-input !min-h-10 !py-2 text-sm"
+                  [placeholder]="'Responder a ' + scrap.authorName.split(' ')[0] + '…'"
+                  [attr.maxlength]="maxLength"
+                  [value]="replyDraft()"
+                  (input)="replyDraft.set($any($event.target).value)"
+                />
+                <button type="submit" class="ok-btn-primary" [disabled]="!replyDraft().trim()">
+                  Enviar
+                </button>
+              </form>
+            }
+          </div>
+        </li>
+      } @empty {
+        <li class="py-10 text-center text-sm text-ink-muted">
+          @switch (filter()) {
+            @case ('nao-lidos') {
+              Você já leu todos os recados. 🎉
+            }
+            @case ('enviados') {
+              Você ainda não enviou recados.
+            }
+            @default {
+              Nenhum recado por aqui ainda.
+            }
+          }
+        </li>
+      }
+    </ul>
+
+    @if (filtered().length) {
+      <nav
+        class="mt-2 hidden items-center justify-between pt-4 tab:flex"
+        aria-label="Paginação dos recados"
+      >
+        <span class="text-xs text-ink-muted" data-testid="scrap-range">{{ range() }}</span>
+        <div class="flex gap-2">
+          @for (n of pages(); track n) {
+            <button
+              type="button"
+              class="page-btn"
+              [class.page-btn--active]="n === page()"
+              [attr.aria-current]="n === page() ? 'page' : null"
+              [attr.aria-label]="'Página ' + n"
+              (click)="page.set(n)"
+            >
+              {{ n }}
+            </button>
+          }
+          <button
+            type="button"
+            class="page-btn"
+            aria-label="Próxima página"
+            [disabled]="page() >= pageCount()"
+            (click)="page.set(page() + 1)"
+          >
+            <mat-icon aria-hidden="true" fontIcon="arrow_forward" class="!size-4 !text-base" />
+          </button>
+        </div>
+      </nav>
+    }
+  </section>
+</div>
+
+<!-- FAB extended (compact) -->
+<button type="button" class="ok-fab tab:hidden" (click)="openComposer()" data-testid="scrap-fab">
+  <mat-icon aria-hidden="true" fontIcon="edit" class="!size-4 !text-base" />
+  Escrever scrap
+</button>
