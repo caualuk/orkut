@@ -1,0 +1,185 @@
+<h1 class="sr-only">Mensagens</h1>
+
+<div class="panes" [class.panes--detail]="hasRouteConversation()">
+  <!-- Lista de conversas -->
+  <section class="list" aria-label="Conversas">
+    <div class="mb-4 hidden items-center justify-between lg:flex">
+      <h2 class="text-[26px] font-bold text-ink">Mensagens</h2>
+      <button
+        type="button"
+        class="ok-btn-primary !size-10 !min-h-0 !p-0"
+        aria-label="Nova mensagem"
+        [matMenuTriggerFor]="newMenu"
+      >
+        <mat-icon aria-hidden="true" fontIcon="edit" class="!size-5 !text-xl" />
+      </button>
+    </div>
+    <label class="search">
+      <mat-icon aria-hidden="true" fontIcon="search" class="!size-4 !text-base text-ink-muted" />
+      <span class="sr-only">Buscar conversas</span>
+      <input
+        type="search"
+        class="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted"
+        placeholder="Buscar conversas"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </label>
+
+    <ul
+      class="mt-3 flex flex-col gap-1 max-tab:ok-card max-tab:p-2"
+      data-testid="conversation-list"
+    >
+      @for (conversation of conversations(); track conversation.id) {
+        @let active = conversation.id === selectedId();
+        <li>
+          <a
+            [routerLink]="['/mensagens', conversation.id]"
+            class="row"
+            [class.row--active]="active"
+            [attr.aria-current]="active ? 'true' : null"
+            data-testid="conversation-item"
+          >
+            <ok-avatar [tone]="conversation.tone" [size]="44" />
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-bold text-ink">{{ conversation.name }}</span>
+              <span
+                class="block truncate text-xs"
+                [class.font-bold]="conversation.unread"
+                [class.text-ink]="conversation.unread"
+                [class.text-ink-secondary]="!conversation.unread"
+              >
+                {{ preview(conversation.id) }}
+              </span>
+            </span>
+            @if (conversation.unread) {
+              <span class="ok-badge"
+                ><span class="sr-only">não lidas: </span>{{ conversation.unread }}</span
+              >
+            } @else {
+              <span
+                class="text-[11px]"
+                [class.text-primary-strong]="active"
+                [class.text-ink-muted]="!active"
+              >
+                {{ conversation.lastActivity }}
+              </span>
+            }
+          </a>
+        </li>
+      } @empty {
+        <li class="p-4 text-center text-sm text-ink-muted">Nenhuma conversa encontrada.</li>
+      }
+    </ul>
+
+    <button type="button" class="ok-btn-tonal mt-3 w-full lg:hidden" [matMenuTriggerFor]="newMenu">
+      <mat-icon aria-hidden="true" fontIcon="edit" class="!size-4 !text-base" /> Nova mensagem
+    </button>
+  </section>
+
+  <mat-menu #newMenu="matMenu">
+    @for (friend of store.friends(); track friend.id) {
+      <button mat-menu-item type="button" (click)="startWith(friend)">{{ friend.name }}</button>
+    }
+  </mat-menu>
+
+  <!-- Conversa -->
+  <section
+    class="chat"
+    [attr.aria-label]="selected() ? 'Conversa com ' + selected()!.name : 'Conversa'"
+  >
+    @if (selected(); as conversation) {
+      <header class="flex items-center gap-3 border-b border-divider px-6 py-4 max-tab:hidden">
+        <ok-avatar [tone]="conversation.tone" [size]="44" />
+        <div class="min-w-0 flex-1">
+          <h2 class="font-bold text-ink" data-testid="chat-title">{{ conversation.name }}</h2>
+          <p
+            class="flex items-center gap-1.5 text-xs"
+            [class.text-success]="conversation.online"
+            [class.text-ink-muted]="!conversation.online"
+          >
+            <span
+              class="size-2 rounded-full"
+              [class.bg-success]="conversation.online"
+              [class.bg-outline]="!conversation.online"
+            ></span>
+            {{ conversation.online ? 'online agora' : 'offline' }}
+          </p>
+        </div>
+        <a
+          routerLink="/amigos"
+          [queryParams]="{ busca: conversation.name }"
+          class="grid size-9 place-items-center rounded-full text-ink-secondary hover:bg-surface-variant"
+          [attr.aria-label]="'Ver ' + conversation.name + ' em Amigos'"
+        >
+          <mat-icon aria-hidden="true" fontIcon="more_vert" />
+        </a>
+      </header>
+      <p class="pt-2 text-center text-sm font-bold text-ink tab:hidden">{{ conversation.name }}</p>
+
+      <div #thread class="thread" role="log" aria-live="polite" data-testid="chat-thread">
+        <p class="mb-2 text-center text-[11px] text-ink-muted">Hoje</p>
+        @for (message of conversation.messages; track message.id) {
+          <div class="bubble" [class.bubble--me]="message.fromMe">
+            <p>{{ message.text }}</p>
+            <p class="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70">
+              {{ message.time }}
+              @if (message.fromMe) {
+                <mat-icon aria-label="enviada" fontIcon="done_all" class="!size-3 !text-xs" />
+              }
+            </p>
+          </div>
+        } @empty {
+          <p class="m-auto text-sm text-ink-muted">
+            Diga oi para {{ conversation.name.split(' ')[0] }}! 👋
+          </p>
+        }
+        @if (conversation.typing) {
+          <div
+            class="typing"
+            role="status"
+            [attr.aria-label]="conversation.name + ' está digitando'"
+          >
+            <i></i><i></i><i></i>
+          </div>
+        }
+      </div>
+
+      <form class="composer" (submit)="$event.preventDefault(); send()">
+        <button type="button" class="tool" aria-label="Inserir emoji" (click)="insert('😊')">
+          <mat-icon aria-hidden="true" fontIcon="sentiment_satisfied" />
+        </button>
+        <button
+          type="button"
+          class="tool max-tab:!hidden"
+          aria-label="Inserir foto"
+          (click)="insert('📷')"
+        >
+          <mat-icon aria-hidden="true" fontIcon="image" />
+        </button>
+        <label for="message-input" class="sr-only">Escreva uma mensagem</label>
+        <input
+          id="message-input"
+          class="min-w-0 flex-1 rounded-full bg-surface-variant px-5 py-3 text-sm text-ink outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-primary"
+          placeholder="Escreva uma mensagem…"
+          autocomplete="off"
+          [attr.maxlength]="maxLength"
+          [value]="draft()"
+          (input)="draft.set($any($event.target).value)"
+          data-testid="message-input"
+        />
+        <button
+          type="submit"
+          class="ok-btn-primary !size-11 !min-h-0 !rounded-full !p-0"
+          aria-label="Enviar mensagem"
+          [disabled]="!draft().trim()"
+          data-testid="send-message"
+        >
+          <mat-icon aria-hidden="true" fontIcon="send" class="!size-5 !text-xl" />
+        </button>
+      </form>
+    } @else {
+      <p class="m-auto p-10 text-sm text-ink-muted">Escolha uma conversa para começar.</p>
+    }
+  </section>
+</div>
