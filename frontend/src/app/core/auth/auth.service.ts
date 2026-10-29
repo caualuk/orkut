@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 import { API_BASE_URL } from '../http/api.config';
-import type { LoginCredentials, User, UserResponse } from './auth.models';
+import type { LoginCredentials, SignupData, User, UserResponse } from './auth.models';
 
 /**
  * Estado de autenticação da aplicação.
@@ -24,6 +24,16 @@ export class AuthService {
   login(credentials: LoginCredentials): Observable<User> {
     return this.http
       .post<UserResponse>(`${this.baseUrl}/login`, credentials, { withCredentials: true })
+      .pipe(
+        map((response) => response.user),
+        tap((user) => this.setUser(user)),
+      );
+  }
+
+  /** Cria a conta; a API já devolve a sessão iniciada (cookie HttpOnly). */
+  signup(data: SignupData): Observable<User> {
+    return this.http
+      .post<UserResponse>(`${this.baseUrl}/signup`, data, { withCredentials: true })
       .pipe(
         map((response) => response.user),
         tap((user) => this.setUser(user)),
