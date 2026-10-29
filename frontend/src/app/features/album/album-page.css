@@ -1,0 +1,81 @@
+:host {
+  display: block;
+}
+
+@media (max-width: 37.49rem) {
+  .album {
+    padding: 8px 8px 12px;
+    border-radius: 20px;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-soft);
+  }
+}
+
+/* Capa em pilha: folha traseira inclinada + capa com borda branca. */
+.stack {
+  position: relative;
+  padding-top: 8px;
+  transition: transform 250ms var(--ease-emphasized);
+}
+
+.album:hover .stack {
+  transform: perspective(800px) rotateX(6deg) translateY(-3px);
+}
+
+.sheet {
+  position: absolute;
+  inset: 0 8% auto;
+  height: 24px;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(180deg, #e4e2e8, #cfccd6);
+  rotate: -2deg;
+}
+
+.cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  border: 4px solid #fff;
+  box-shadow: 0 10px 24px rgb(28 27 31 / 14%);
+}
+
+.create {
+  display: flex;
+  aspect-ratio: 4 / 3;
+  margin-top: 8px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  border: 1.5px dashed var(--color-outline);
+  background: var(--color-surface-variant);
+  cursor: pointer;
+  transition: border-color 150ms var(--ease-emphasized);
+}
+
+.create:focus-within,
+.create--drag {
+  border-color: var(--color-primary);
+  background: var(--color-primary-container);
+}
+
+.create--form {
+  aspect-ratio: auto;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 12px;
+  cursor: default;
+}
+
+.photo {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgb(28 27 31 / 10%);
+  transition: transform 250ms var(--ease-emphasized);
+}
+
+.photo:hover {
+  transform: translateY(-3px) scale(1.02);
+}

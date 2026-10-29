@@ -1,0 +1,131 @@
+<div class="flex flex-col gap-4 tab:gap-5">
+  <ok-page-header heading="Álbum" [subtitle]="subtitle()">
+    <button
+      type="button"
+      class="ok-btn-primary max-lg:hidden"
+      (click)="startCreating()"
+      data-testid="new-album"
+    >
+      + Novo álbum
+    </button>
+  </ok-page-header>
+
+  <section class="tab:ok-card tab:p-6" aria-label="Seus álbuns">
+    <ul
+      class="grid grid-cols-2 gap-3 tab:grid-cols-3 tab:gap-6 lg:grid-cols-4"
+      data-testid="album-grid"
+    >
+      @for (album of store.albums(); track album.id; let i = $index) {
+        <li class="album ok-enter" [style.--i]="i">
+          <div class="stack" aria-hidden="true">
+            <span class="sheet"></span>
+            <span class="cover" [style.background]="gradients[album.tone]"></span>
+          </div>
+          <p class="mt-3 truncate text-sm font-bold text-ink">
+            {{ album.title }}
+            @if (album.emoji) {
+              <span aria-hidden="true">{{ album.emoji }}</span>
+            }
+          </p>
+          <p class="text-xs text-ink-muted">
+            {{ album.photos }} fotos<span class="max-tab:hidden">
+              · {{ visibilityLabels[album.visibility].toLowerCase() }}</span
+            >
+          </p>
+        </li>
+      }
+
+      <li class="ok-enter" [style.--i]="store.albums().length">
+        @if (creating()) {
+          <form
+            class="create create--form"
+            (submit)="$event.preventDefault(); create()"
+            data-testid="album-form"
+          >
+            <label class="ok-label" for="album-title">Nome do álbum</label>
+            <input
+              id="album-title"
+              class="ok-input !min-h-10 !py-2 text-sm"
+              maxlength="60"
+              required
+              [value]="newTitle()"
+              (input)="newTitle.set($any($event.target).value)"
+            />
+            <label class="ok-label mt-2" for="album-visibility">Quem pode ver</label>
+            <select
+              id="album-visibility"
+              class="ok-input !min-h-10 !py-2 text-sm"
+              [value]="newVisibility()"
+              (change)="newVisibility.set($any($event.target).value)"
+            >
+              @for (option of visibilityOptions; track option) {
+                <option [value]="option" [selected]="option === newVisibility()">
+                  {{ visibilityLabels[option] }}
+                </option>
+              }
+            </select>
+            <div class="mt-3 flex gap-2">
+              <button type="button" class="ok-btn-tonal flex-1" (click)="creating.set(false)">
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="ok-btn-primary flex-1 !px-3"
+                [disabled]="!newTitle().trim()"
+              >
+                Criar
+              </button>
+            </div>
+          </form>
+        } @else {
+          <label
+            class="create"
+            [class.create--drag]="dragging()"
+            (dragover)="$event.preventDefault(); dragging.set(true)"
+            (dragleave)="dragging.set(false)"
+            (drop)="onDrop($event)"
+          >
+            <input
+              type="file"
+              class="sr-only"
+              accept="image/png,image/jpeg"
+              multiple
+              (change)="onFiles($any($event.target).files); $any($event.target).value = ''"
+              data-testid="photo-input"
+            />
+            <span class="ok-sphere-pearl size-14" aria-hidden="true"></span>
+            <span class="mt-3 text-xs text-ink-secondary">Arraste fotos aqui</span>
+            <span class="sr-only">ou clique para escolher fotos (JPG ou PNG até 5 MB)</span>
+          </label>
+          <button type="button" class="mt-3 block text-left" (click)="startCreating()">
+            <span class="block text-sm font-bold text-ink">Criar álbum</span>
+            <span class="block text-xs text-ink-muted">privado por padrão</span>
+          </button>
+        }
+      </li>
+    </ul>
+  </section>
+
+  <section class="tab:ok-card tab:p-6" aria-labelledby="recent-title">
+    <h2 id="recent-title" class="mb-4 text-base font-bold text-ink tab:text-lg">Fotos recentes</h2>
+    <ul
+      class="grid grid-cols-3 gap-2 tab:grid-cols-4 tab:gap-3 lg:grid-cols-6"
+      data-testid="photo-grid"
+    >
+      @for (photo of store.photos(); track photo.id) {
+        <li class="photo">
+          @if (photo.url) {
+            <img [src]="photo.url" [alt]="photo.alt" class="size-full object-cover" />
+          } @else {
+            <div
+              class="size-full"
+              [style.background]="gradients[photo.tone]"
+              role="img"
+              [attr.aria-label]="photo.alt"
+            ></div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+</div>
