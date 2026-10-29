@@ -1,0 +1,310 @@
+<form
+  class="ok-card p-4 tab:p-8"
+  [formGroup]="form"
+  (ngSubmit)="save()"
+  novalidate
+  data-testid="profile-form"
+>
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div class="max-lg:sr-only">
+      <h1 class="text-[30px] leading-tight font-bold text-ink" data-testid="page-title">
+        Editar perfil
+      </h1>
+      <p class="mt-1 text-sm text-ink-secondary">Atualize como seus amigos te veem no orkut.</p>
+    </div>
+    <div class="hidden items-center gap-6 lg:flex">
+      <button type="button" class="text-sm font-bold text-ink hover:underline" (click)="reset()">
+        Cancelar
+      </button>
+      <button type="submit" class="ok-btn-primary !h-11 !px-6" data-testid="save-profile">
+        Salvar alterações
+      </button>
+    </div>
+  </div>
+
+  <!-- Foto (compact/medium ficam acima das abas) -->
+  <div class="flex flex-col items-center gap-3 lg:hidden">
+    <ng-container *ngTemplateOutlet="photoBlock" />
+  </div>
+
+  <div class="ok-tabs mt-4 lg:mt-8" role="tablist" aria-label="Seções do perfil">
+    @for (item of tabs; track item.id) {
+      <button
+        type="button"
+        role="tab"
+        class="ok-tab"
+        [attr.aria-selected]="tab() === item.id"
+        [attr.aria-controls]="'panel-' + item.id"
+        (click)="tab.set(item.id)"
+      >
+        {{ item.label }}
+        @if (tabHasError(item.id) && form.touched) {
+          <span class="size-2 rounded-full bg-danger" role="img" aria-label="contém erros"></span>
+        }
+      </button>
+    }
+  </div>
+
+  <div class="mt-6 grid gap-8 lg:grid-cols-[208px_minmax(0,1fr)] lg:gap-14">
+    <div class="hidden flex-col items-center gap-3 lg:flex">
+      <ng-container *ngTemplateOutlet="photoBlock" />
+      <p class="text-center text-xs text-ink-muted">
+        JPG ou PNG, até 5 MB.<br />Arraste uma imagem aqui.
+      </p>
+    </div>
+
+    <div [id]="'panel-' + tab()" role="tabpanel">
+      @switch (tab()) {
+        @case ('geral') {
+          <div class="grid gap-x-4 gap-y-5 tab:grid-cols-2">
+            <div>
+              <label class="field-label" for="firstName">Nome</label>
+              <input
+                id="firstName"
+                class="ok-input"
+                formControlName="firstName"
+                autocomplete="given-name"
+                maxlength="40"
+              />
+              @if (form.controls.firstName.touched && form.controls.firstName.invalid) {
+                <p class="error">Informe seu nome.</p>
+              }
+            </div>
+            <div>
+              <label class="field-label" for="lastName">Sobrenome</label>
+              <input
+                id="lastName"
+                class="ok-input"
+                formControlName="lastName"
+                autocomplete="family-name"
+                maxlength="40"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="gender">Sexo</label>
+              <select id="gender" class="ok-input" formControlName="gender">
+                @for (option of genders; track option[0]) {
+                  <option [value]="option[0]">{{ option[1] }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="relationship">Relacionamento</label>
+              <select id="relationship" class="ok-input" formControlName="relationship">
+                @for (option of relationships; track option[0]) {
+                  <option [value]="option[0]">{{ option[1] }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="birthday">Aniversário</label>
+              <input
+                id="birthday"
+                type="date"
+                class="ok-input"
+                formControlName="birthday"
+                min="1900-01-01"
+                [max]="today"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="city">Cidade</label>
+              <input
+                id="city"
+                class="ok-input"
+                formControlName="city"
+                autocomplete="address-level2"
+                maxlength="80"
+              />
+            </div>
+            <div class="tab:col-span-2">
+              <label class="field-label" for="about">Quem sou eu</label>
+              <div class="relative">
+                <textarea
+                  id="about"
+                  class="ok-input min-h-[120px] resize-y pb-8"
+                  formControlName="about"
+                  [attr.maxlength]="aboutMax"
+                  aria-describedby="about-count"
+                ></textarea>
+                <span id="about-count" class="absolute right-4 bottom-3 text-[11px] text-ink-muted">
+                  {{ form.controls.about.value.length }} / {{ aboutMax }}
+                </span>
+              </div>
+            </div>
+            <fieldset class="tab:col-span-2">
+              <legend class="field-label">Interesses</legend>
+              <div class="flex flex-wrap gap-2">
+                @for (interest of interestOptions(); track interest) {
+                  @let on = interests().includes(interest);
+                  <button
+                    type="button"
+                    class="interest"
+                    [class.interest--on]="on"
+                    [attr.aria-pressed]="on"
+                    (click)="toggleInterest(interest)"
+                  >
+                    @if (on) {
+                      <mat-icon aria-hidden="true" fontIcon="check" class="!size-4 !text-base" />
+                    }
+                    {{ interest }}
+                  </button>
+                }
+                @if (addingInterest()) {
+                  <input
+                    class="ok-input !min-h-9 !w-40 !rounded-xl !py-1 text-sm"
+                    aria-label="Novo interesse"
+                    maxlength="30"
+                    [value]="newInterest()"
+                    (input)="newInterest.set($any($event.target).value)"
+                    (keydown.enter)="$event.preventDefault(); addInterest()"
+                    (blur)="addInterest()"
+                  />
+                } @else {
+                  <button
+                    type="button"
+                    class="interest interest--add"
+                    (click)="addingInterest.set(true)"
+                  >
+                    + adicionar
+                  </button>
+                }
+              </div>
+            </fieldset>
+          </div>
+        }
+        @case ('social') {
+          <div class="grid gap-x-4 gap-y-5 tab:grid-cols-2" formGroupName="social">
+            <div>
+              <label class="field-label" for="humor">Humor</label
+              ><input id="humor" class="ok-input" formControlName="humor" maxlength="60" />
+            </div>
+            <div>
+              <label class="field-label" for="style">Estilo</label
+              ><input id="style" class="ok-input" formControlName="style" maxlength="60" />
+            </div>
+            <div>
+              <label class="field-label" for="pets">Animais de estimação</label
+              ><input id="pets" class="ok-input" formControlName="pets" maxlength="60" />
+            </div>
+            <div>
+              <label class="field-label" for="smoking">Fumo</label
+              ><input id="smoking" class="ok-input" formControlName="smoking" maxlength="60" />
+            </div>
+            <div>
+              <label class="field-label" for="drinking">Bebo</label
+              ><input id="drinking" class="ok-input" formControlName="drinking" maxlength="60" />
+            </div>
+          </div>
+        }
+        @case ('contato') {
+          <div class="grid gap-x-4 gap-y-5 tab:grid-cols-2" formGroupName="contact">
+            <div>
+              <label class="field-label" for="phone">Telefone</label>
+              <input
+                id="phone"
+                type="tel"
+                class="ok-input"
+                formControlName="phone"
+                autocomplete="tel"
+                maxlength="20"
+              />
+              @if (form.controls.contact.controls.phone.invalid) {
+                <p class="error">Use apenas números, espaços, parênteses, + ou -.</p>
+              }
+            </div>
+            <div>
+              <label class="field-label" for="website">Site</label>
+              <input
+                id="website"
+                type="url"
+                class="ok-input"
+                formControlName="website"
+                placeholder="https://"
+                maxlength="200"
+              />
+              @if (form.controls.contact.controls.website.invalid) {
+                <p class="error">Informe um endereço começando com http:// ou https://.</p>
+              }
+            </div>
+          </div>
+        }
+        @case ('profissional') {
+          <div class="grid gap-x-4 gap-y-5 tab:grid-cols-2" formGroupName="professional">
+            <div>
+              <label class="field-label" for="education">Escolaridade</label
+              ><input id="education" class="ok-input" formControlName="education" maxlength="80" />
+            </div>
+            <div>
+              <label class="field-label" for="company">Empresa</label
+              ><input
+                id="company"
+                class="ok-input"
+                formControlName="company"
+                autocomplete="organization"
+                maxlength="80"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="role">Cargo</label
+              ><input
+                id="role"
+                class="ok-input"
+                formControlName="role"
+                autocomplete="organization-title"
+                maxlength="80"
+              />
+            </div>
+          </div>
+        }
+        @case ('pessoal') {
+          <div class="grid gap-x-4 gap-y-5 tab:grid-cols-2" formGroupName="personal">
+            <div>
+              <label class="field-label" for="music">Músicas</label
+              ><input id="music" class="ok-input" formControlName="music" maxlength="200" />
+            </div>
+            <div>
+              <label class="field-label" for="movies">Filmes</label
+              ><input id="movies" class="ok-input" formControlName="movies" maxlength="200" />
+            </div>
+            <div>
+              <label class="field-label" for="books">Livros</label
+              ><input id="books" class="ok-input" formControlName="books" maxlength="200" />
+            </div>
+            <div>
+              <label class="field-label" for="passions">Paixões</label
+              ><input id="passions" class="ok-input" formControlName="passions" maxlength="200" />
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="mt-8 flex gap-3 lg:hidden">
+    <button type="button" class="ok-btn-tonal !h-12 flex-1" (click)="reset()">Cancelar</button>
+    <button type="submit" class="ok-btn-primary !h-12 flex-[2]" data-testid="save-profile-mobile">
+      Salvar alterações
+    </button>
+  </div>
+</form>
+
+<ng-template #photoBlock>
+  <ok-profile-photo
+    class="photo"
+    [round]="true"
+    [src]="photoUrl()"
+    [alt]="'Foto de ' + store.displayName()"
+  />
+  <label class="ok-btn-tonal cursor-pointer focus-within:ring-2 focus-within:ring-primary">
+    <input
+      type="file"
+      class="sr-only"
+      accept="image/png,image/jpeg"
+      (change)="onPhoto($any($event.target).files); $any($event.target).value = ''"
+      data-testid="photo-upload"
+    />
+    <mat-icon aria-hidden="true" fontIcon="autorenew" class="!size-4 !text-base" />
+    Trocar foto
+  </label>
+</ng-template>
