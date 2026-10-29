@@ -3,6 +3,38 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.2.0] — 2026-10-29
+
+### Adicionado
+
+- **Cadastro** (`/cadastro`) fiel ao design (desktop e bottom sheet no mobile): nome,
+  sobrenome, e-mail, senha com medidor de força, nascimento, sexo, aceite dos termos e
+  foto opcional; entra direto na Home.
+- **API** `POST /api/auth/signup` com validação Zod, Argon2id, `409 EMAIL_TAKEN`, rate
+  limit próprio e sessão iniciada; migration `002_user_signup` (nascimento, sexo e
+  aceite dos termos).
+- **Casca autenticada** responsiva (Material 3 window size classes): Top App Bar com
+  pílulas e busca global, coluna de perfil e menu, Navigation Rail (tablet), Navigation
+  Bar + Navigation Drawer (mobile), rodapé, menu da conta com Sair.
+- **Telas internas**: Home, Editar perfil, Recados, Álbum, Feeds, Mensagens (lista e
+  conversa), Depoimentos, Configurações, Amigos e Comunidade (fórum, enquetes, eventos,
+  membros), com interações funcionais sobre o `SocialStore` (signals).
+- **Tema escuro** e "Sistema" em Configurações → Aparência.
+- **Testes**: +19 backend, +25 unitários e +48 E2E (com axe em todas as telas).
+
+### Alterado
+
+- Token `ink-muted` escurecido para `#6C6775` e novo `primary-bold` (`#D81B60`) para
+  texto pequeno e badges, garantindo contraste WCAG 2.1 AA.
+- Logout passou para o menu da conta (avatar) e para o drawer no mobile.
+- Fluxo de versionamento: tudo direto na `main`; branches por tela removidas.
+
+### Limitações
+
+- Recados, amigos, mensagens, depoimentos, álbuns, feeds, comunidades e perfil ainda
+  não persistem no servidor (dados do design em memória). Ver
+  [limitações](docs/architecture.md#limitações-conhecidas).
+
 ## [0.1.0] — 2026-10-28
 
 ### Adicionado

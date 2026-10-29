@@ -1,6 +1,6 @@
 {
   "name": "orkut-backend",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "API do orkut (Node.js + Express + PostgreSQL/Supabase)",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
