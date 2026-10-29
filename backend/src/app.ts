@@ -23,6 +23,7 @@ export interface AppDependencies {
     windowMs: number;
     globalMax: number;
     loginMax: number;
+    signupMax?: number;
   };
 }
 
@@ -30,6 +31,7 @@ const DEFAULT_RATE_LIMITS = {
   windowMs: 15 * 60 * 1000,
   globalMax: 300,
   loginMax: 10,
+  signupMax: 5,
 };
 
 /**
@@ -90,6 +92,16 @@ export function createApp(deps: AppDependencies): Express {
     handler: (_req, _res, next) => next(tooManyRequests()),
   });
 
+  // Cadastro: todas as tentativas contam, contra criação de contas em massa e
+  // enumeração de e-mails pela resposta 409.
+  const signupRateLimiter = rateLimit({
+    windowMs: limits.windowMs,
+    limit: limits.signupMax ?? DEFAULT_RATE_LIMITS.signupMax,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler: (_req, _res, next) => next(tooManyRequests()),
+  });
+
   const api = express.Router();
   api.use(globalLimiter);
   api.use(originGuard(config.corsOrigins));
@@ -110,6 +122,7 @@ export function createApp(deps: AppDependencies): Express {
       service: authService,
       cookie: new SessionCookie(config),
       loginRateLimiter,
+      signupRateLimiter,
     }),
   );
 

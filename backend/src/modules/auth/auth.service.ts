@@ -8,6 +8,8 @@ import {
   type LoginResult,
   type PublicUser,
   type RequestContext,
+  type SignupInput,
+  type UserRecord,
 } from './auth.types.js';
 
 export interface AuthServiceOptions {
@@ -63,20 +65,21 @@ export class AuthService {
     }
 
     await this.repository.registerSuccessfulLogin(user.id);
+    return this.startSession(user, input.remember, context);
+  }
 
-    const token = generateSessionToken();
-    const lifetime = input.remember ? this.options.rememberMs : this.options.sessionTtlMs;
-    const expiresAt = new Date(this.now().getTime() + lifetime);
-
-    await this.repository.createSession({
-      userId: user.id,
-      tokenHash: hashSessionToken(token),
-      expiresAt,
-      userAgent: context.userAgent?.slice(0, 512) ?? null,
-      ipAddress: context.ipAddress,
+  /** Cria a conta e já inicia uma sessão (o cadastro leva direto para a Home). */
+  async signup(input: SignupInput, context: RequestContext): Promise<LoginResult> {
+    const user = await this.repository.createUser({
+      email: input.email,
+      displayName: `${input.firstName} ${input.lastName}`,
+      passwordHash: await this.hasher.hash(input.password),
+      birthDate: input.birthDate,
+      gender: input.gender,
     });
 
-    return { user: toPublicUser(user), token, expiresAt, persistent: input.remember };
+    if (!user) throw AppError.emailTaken();
+    return this.startSession(user, false, context);
   }
 
   async getUserFromSession(token: string | undefined): Promise<PublicUser | null> {
@@ -87,6 +90,26 @@ export class AuthService {
   async logout(token: string | undefined): Promise<void> {
     if (!isWellFormedToken(token)) return;
     await this.repository.revokeSession(hashSessionToken(token));
+  }
+
+  private async startSession(
+    user: UserRecord,
+    persistent: boolean,
+    context: RequestContext,
+  ): Promise<LoginResult> {
+    const token = generateSessionToken();
+    const lifetime = persistent ? this.options.rememberMs : this.options.sessionTtlMs;
+    const expiresAt = new Date(this.now().getTime() + lifetime);
+
+    await this.repository.createSession({
+      userId: user.id,
+      tokenHash: hashSessionToken(token),
+      expiresAt,
+      userAgent: context.userAgent?.slice(0, 512) ?? null,
+      ipAddress: context.ipAddress,
+    });
+
+    return { user: toPublicUser(user), token, expiresAt, persistent };
   }
 
   private getDummyHash(): Promise<string> {

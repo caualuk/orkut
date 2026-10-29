@@ -1,5 +1,5 @@
 import type { Database } from '../../db/pool.js';
-import type { NewSession, PublicUser, UserRecord } from './auth.types.js';
+import type { NewSession, NewUser, PublicUser, UserRecord } from './auth.types.js';
 
 /**
  * Porta de persistência do módulo de autenticação. A camada de serviço depende
@@ -7,6 +7,8 @@ import type { NewSession, PublicUser, UserRecord } from './auth.types.js';
  */
 export interface AuthRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
+  /** Cria o usuário; retorna `null` se o e-mail já estiver cadastrado. */
+  createUser(user: NewUser): Promise<UserRecord | null>;
   registerFailedLogin(userId: string, maxAttempts: number, lockMs: number): Promise<void>;
   registerSuccessfulLogin(userId: string): Promise<void>;
   createSession(session: NewSession): Promise<void>;
@@ -23,6 +25,17 @@ interface UserRow {
   locked_until: Date | null;
 }
 
+function toUserRecord(row: UserRow): UserRecord {
+  return {
+    id: row.id,
+    email: row.email,
+    displayName: row.display_name,
+    passwordHash: row.password_hash,
+    failedLoginAttempts: row.failed_login_attempts,
+    lockedUntil: row.locked_until,
+  };
+}
+
 /** Implementação PostgreSQL. Todas as queries são parametrizadas ($1, $2…). */
 export class PgAuthRepository implements AuthRepository {
   constructor(private readonly db: Database) {}
@@ -34,17 +47,20 @@ export class PgAuthRepository implements AuthRepository {
         where email = $1`,
       [email],
     );
-    const row = rows[0];
-    if (!row) return null;
+    return rows[0] ? toUserRecord(rows[0]) : null;
+  }
 
-    return {
-      id: row.id,
-      email: row.email,
-      displayName: row.display_name,
-      passwordHash: row.password_hash,
-      failedLoginAttempts: row.failed_login_attempts,
-      lockedUntil: row.locked_until,
-    };
+  async createUser(user: NewUser): Promise<UserRecord | null> {
+    // `on conflict do nothing` evita corrida entre dois cadastros com o mesmo e-mail.
+    const { rows } = await this.db.query<UserRow>(
+      `insert into app.users
+              (email, display_name, password_hash, birth_date, gender, terms_accepted_at)
+       values ($1, $2, $3, $4, $5, now())
+       on conflict (email) do nothing
+       returning id, email, display_name, password_hash, failed_login_attempts, locked_until`,
+      [user.email, user.displayName, user.passwordHash, user.birthDate, user.gender],
+    );
+    return rows[0] ? toUserRecord(rows[0]) : null;
   }
 
   async registerFailedLogin(userId: string, maxAttempts: number, lockMs: number): Promise<void> {

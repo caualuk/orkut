@@ -34,6 +34,10 @@ export class AppError extends Error {
     return new AppError(404, 'NOT_FOUND', message);
   }
 
+  static emailTaken(): AppError {
+    return new AppError(409, 'EMAIL_TAKEN', 'Este e-mail já está em uso. Tente entrar.');
+  }
+
   static tooManyRequests(): AppError {
     return new AppError(
       429,

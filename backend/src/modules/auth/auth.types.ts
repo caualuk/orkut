@@ -28,6 +28,25 @@ export interface LoginInput {
   remember: boolean;
 }
 
+export type Gender = 'feminino' | 'masculino' | 'outro' | 'nao-informar';
+
+export interface NewUser {
+  email: string;
+  displayName: string;
+  passwordHash: string;
+  birthDate: string | null;
+  gender: Gender | null;
+}
+
+export interface SignupInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  birthDate: string | null;
+  gender: Gender | null;
+}
+
 export interface RequestContext {
   ipAddress: string | null;
   userAgent: string | null;
