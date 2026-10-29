@@ -1,0 +1,143 @@
+<div class="flex flex-col gap-4 tab:gap-5">
+  <ok-page-header heading="Amigos" [subtitle]="subtitle()">
+    <label
+      class="flex h-12 w-full items-center gap-3 rounded-full border border-outline bg-surface px-5 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/20 lg:w-[320px]"
+    >
+      <mat-icon aria-hidden="true" fontIcon="search" class="!size-4 !text-base text-ink-muted" />
+      <span class="sr-only">Buscar entre seus amigos</span>
+      <input
+        type="search"
+        class="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted"
+        [placeholder]="'Buscar entre ' + store.friends().length + ' amigos'"
+        [value]="term()"
+        (input)="term.set($any($event.target).value)"
+        data-testid="friend-search"
+      />
+    </label>
+  </ok-page-header>
+
+  <div
+    class="-mx-4 flex gap-2 overflow-x-auto px-4 tab:mx-0 tab:px-0"
+    role="toolbar"
+    aria-label="Filtrar amigos"
+  >
+    @for (option of filters(); track option.id) {
+      <button
+        type="button"
+        class="ok-chip !h-10 !px-4"
+        [attr.aria-pressed]="filter() === option.id"
+        (click)="filter.set(option.id)"
+        [attr.data-testid]="'friend-filter-' + option.id"
+      >
+        @if (option.dot) {
+          <span class="size-2.5 rounded-full bg-current" aria-hidden="true"></span>
+        }
+        @if (option.star) {
+          <span aria-hidden="true">★</span>
+        }
+        <span class="tab:hidden">{{ option.short ?? option.label }}</span>
+        <span class="max-tab:hidden">{{ option.label }}</span>
+        <span [class.font-bold]="filter() === option.id">{{ option.count }}</span>
+      </button>
+    }
+  </div>
+
+  @if (filter() === 'pedidos') {
+    <ul class="flex flex-col gap-3" data-testid="friend-requests">
+      @for (request of store.friendRequests(); track request.id) {
+        <li class="ok-card flex items-center gap-4 p-4">
+          <ok-avatar [tone]="request.tone" [initials]="request.initials" shape="tile" [size]="52" />
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-ink">{{ request.name }}</p>
+            <p class="text-xs text-ink-muted">{{ request.mutualFriends }} amigos em comum</p>
+          </div>
+          <button
+            type="button"
+            class="ok-btn-outline !text-ink"
+            (click)="store.rejectFriendRequest(request.id)"
+          >
+            Recusar
+          </button>
+          <button
+            type="button"
+            class="ok-btn-primary"
+            (click)="store.acceptFriendRequest(request.id)"
+          >
+            Aceitar
+          </button>
+        </li>
+      } @empty {
+        <li class="ok-card p-8 text-center text-sm text-ink-muted">
+          Nenhum pedido de amizade pendente.
+        </li>
+      }
+    </ul>
+  } @else {
+    <ul
+      class="grid grid-cols-2 gap-3 tab:grid-cols-3 tab:gap-5 lg:grid-cols-4"
+      data-testid="friend-grid"
+    >
+      @for (friend of friends(); track friend.id; let i = $index) {
+        <li class="card ok-card ok-enter" [style.--i]="i" data-testid="friend-card">
+          <ok-avatar
+            [tone]="friend.tone"
+            [initials]="friend.initials"
+            shape="tile"
+            [size]="88"
+            class="max-tab:!size-[72px]"
+          />
+          <p class="mt-3 font-bold text-ink">{{ friend.name }}</p>
+          <p class="mt-1 text-xs">
+            @if (friend.bestFriend) {
+              <span class="text-primary-strong">★ melhor amigo(a)</span>
+            } @else if (friend.online) {
+              <span class="inline-flex items-center gap-1 text-success">
+                <span class="size-2 rounded-full bg-success" aria-hidden="true"></span>online
+              </span>
+            }
+            @if (!friend.bestFriend && !friend.online) {
+              <span class="text-ink-muted">{{ friend.mutualFriends }} em comum</span>
+            } @else {
+              <span
+                class="max-tab:hidden"
+                [class.text-primary-strong]="friend.bestFriend"
+                [class.text-success]="!friend.bestFriend"
+              >
+                · {{ friend.mutualFriends }} em comum
+              </span>
+            }
+          </p>
+          <a
+            routerLink="/recados"
+            [queryParams]="{ para: friend.id }"
+            class="ok-btn-tonal mt-4 w-full"
+            [attr.aria-label]="'Deixar scrap para ' + friend.name"
+          >
+            <mat-icon aria-hidden="true" fontIcon="mail" class="!size-4 !text-base" />
+            <span class="max-tab:hidden">Deixar scrap</span><span class="tab:hidden">Scrap</span>
+          </a>
+        </li>
+      } @empty {
+        <li class="ok-card col-span-full p-8 text-center text-sm text-ink-muted">
+          Nenhum amigo encontrado{{ term() ? ' para "' + term() + '"' : '' }}.
+        </li>
+      }
+
+      @if (filter() === 'todos' && !term()) {
+        <li class="card invite max-tab:col-span-2">
+          <span class="ok-sphere-pearl size-[88px] max-tab:hidden" aria-hidden="true"></span>
+          <p class="mt-3 font-bold text-ink">Convidar amigos</p>
+          <p class="mt-1 text-xs text-ink-muted">por link ou e-mail</p>
+          <button
+            type="button"
+            class="ok-btn-primary mt-4 w-full"
+            (click)="invite()"
+            data-testid="invite"
+          >
+            + Convidar
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>
