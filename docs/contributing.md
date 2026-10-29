@@ -18,6 +18,23 @@ Padrão [Conventional Commits](https://www.conventionalcommits.org/pt-br/), em p
 Tipos usados: `feat`, `fix`, `test`, `docs`, `chore`, `style`, `refactor`, `ci`.
 Escopos: `backend`, `frontend`, `auth`, `login`, `db`, `e2e`.
 
+### Exceção: integração da 0.1.0
+
+A primeira entrega (`caualuk-orkut-login`) entrou na `main` por *fast-forward*, sem PR,
+porque a `main` só tinha o commit inicial. As próximas telas seguem o fluxo via PR.
+
+Para integrar uma branch localmente sem PR (somente quando a `main` não divergiu):
+
+```bash
+git checkout main
+git pull
+git merge --ff-only caualuk-orkut-<tela>
+git push origin main
+```
+
+Arquivos fora do Git que cada clone precisa ter: `backend/.env` (copiar de
+`backend/.env.example` e preencher) e as dependências (`npm run install:all`).
+
 ## Antes de abrir o PR
 
 ```bash

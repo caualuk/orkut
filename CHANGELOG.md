@@ -25,3 +25,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - **Testes**: 58 backend + 5 banco real + 53 unitários frontend + 54 E2E (Playwright, axe).
 - **Documentação**: arquitetura, segurança, testes e fluxo de versionamento.
 - **CI**: GitHub Actions com lint, testes e build.
+
+### Integração
+
+- Em 2026-10-29 a branch `caualuk-orkut-login` foi integrada à `main` por
+  *fast-forward* (`git merge --ff-only`), sem Pull Request, porque a `main` só tinha
+  o commit inicial e não havia divergência. O CI roda no push para a `main`.
