@@ -13,3 +13,15 @@ export interface LoginCredentials {
 export interface UserResponse {
   user: User;
 }
+
+export type Gender = 'feminino' | 'masculino' | 'outro' | 'nao-informar';
+
+export interface SignupData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  birthDate: string | null;
+  gender: Gender | null;
+  acceptTerms: true;
+}
