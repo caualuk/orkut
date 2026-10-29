@@ -2,8 +2,10 @@
 
 ## Branches
 
-- `main` — estável; recebe mudanças apenas via Pull Request.
-- `caualuk-orkut-<tela>` — uma branch por tela/entrega (ex.: `caualuk-orkut-login`).
+- `main` — **única branch** do projeto. Os commits são feitos e enviados direto nela
+  (`git push origin main`), sem branches de feature nem Pull Requests.
+- As branches por tela usadas até a 0.1.0 (`caualuk-orkut-<tela>`) foram removidas na
+  0.2.0, quando tudo foi consolidado na `main`.
 
 ## Commits
 
@@ -16,26 +18,18 @@ Padrão [Conventional Commits](https://www.conventionalcommits.org/pt-br/), em p
 ```
 
 Tipos usados: `feat`, `fix`, `test`, `docs`, `chore`, `style`, `refactor`, `ci`.
-Escopos: `backend`, `frontend`, `auth`, `login`, `db`, `e2e`.
+Escopos: `backend`, `frontend`, `auth`, `login`, `signup`, `db`, `e2e` e o nome da tela
+(`home`, `recados`, `mensagens`…).
 
-### Exceção: integração da 0.1.0
+### Histórico
 
-A primeira entrega (`caualuk-orkut-login`) entrou na `main` por *fast-forward*, sem PR,
-porque a `main` só tinha o commit inicial. As próximas telas seguem o fluxo via PR.
-
-Para integrar uma branch localmente sem PR (somente quando a `main` não divergiu):
-
-```bash
-git checkout main
-git pull
-git merge --ff-only caualuk-orkut-<tela>
-git push origin main
-```
+A 0.1.0 (Login) entrou na `main` por _fast-forward_ a partir de `caualuk-orkut-login`.
+A partir da 0.2.0 todo o trabalho acontece direto na `main`.
 
 Arquivos fora do Git que cada clone precisa ter: `backend/.env` (copiar de
 `backend/.env.example` e preencher) e as dependências (`npm run install:all`).
 
-## Antes de abrir o PR
+## Antes de cada push
 
 ```bash
 npm run lint && npm test && npm run test:db && npm run e2e
@@ -44,4 +38,5 @@ git log -p | grep -cE "<trecho de qualquer segredo>"   # deve ser 0
 
 ## Versão
 
-SemVer nos `package.json`. A entrega da tela de Login é a **0.1.0** (ver CHANGELOG).
+SemVer nos `package.json`. Login é a **0.1.0**; cadastro e telas internas, a **0.2.0**
+(ver CHANGELOG).

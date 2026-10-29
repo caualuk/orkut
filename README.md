@@ -5,7 +5,11 @@ Releitura moderna do orkut — "Seus amigos, scraps e comunidades. De volta."
 Monorepo com frontend **Angular 22 + Angular Material 3 + Tailwind CSS 4** e backend
 **Node.js + Express 5 + TypeScript**, persistindo em **PostgreSQL (Supabase)**.
 
-> Etapa atual: **tela de Login** (com sessão, logout e rotas protegidas).
+> Etapa atual (**0.2.0**): todas as telas do design `orkut-redesign` — Login, Criar conta,
+> Home, Editar perfil, Recados, Álbum, Feeds, Mensagens, Depoimentos, Configurações,
+> Amigos e Comunidade — em desktop, tablet e mobile. Login e cadastro usam a API real;
+> as telas sociais usam dados em memória até a API social existir
+> (ver [limitações](docs/architecture.md#limitações-conhecidas)).
 
 ## Estrutura
 
@@ -39,7 +43,8 @@ npm run dev:backend    # http://localhost:3000
 npm run dev:frontend   # http://localhost:4200
 ```
 
-Acesse `http://localhost:4200/login` e entre com `SEED_USER_EMAIL` / `SEED_USER_PASSWORD`.
+Acesse `http://localhost:4200/login` e entre com `SEED_USER_EMAIL` / `SEED_USER_PASSWORD`,
+ou crie uma conta em `http://localhost:4200/cadastro`.
 
 ## Qualidade
 

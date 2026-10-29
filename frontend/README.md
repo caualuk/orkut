@@ -17,15 +17,28 @@ SPA em **Angular 22** (standalone, zoneless, signals) com **Angular Material 3**
 
 ```
 src/app/
-├── core/                 # Singletons: autenticação, HTTP, guards
-│   ├── auth/             # AuthService, guards, sanitização de returnUrl
-│   └── http/             # API_BASE_URL e normalização de erros da API
+├── core/                 # Singletons: autenticação, HTTP, guards, estado social, tema
+│   ├── auth/             # AuthService (login, cadastro), guards, sanitização de returnUrl
+│   ├── http/             # API_BASE_URL e normalização de erros da API
+│   ├── social/           # SocialStore (signals) + dados iniciais do design
+│   └── theme/            # ThemeService (claro / escuro / sistema)
+├── layout/               # AppShell: Top App Bar, menu do perfil, rail, bottom bar, drawer
 ├── shared/               # Reutilizáveis sem regra de negócio
 │   ├── motion/           # Diretivas de tilt 3D e parallax (Motion spec)
-│   └── ui/               # BrandLogo, página "em breve"/404
+│   └── ui/               # BrandLogo, Avatar 3D, foto de perfil, diálogos, page header, 404
 └── features/             # Telas (lazy loading)
     ├── auth/login/       # LoginPage (container) + LoginForm + LoginScene
-    └── home/             # Home provisória (rota protegida)
+    ├── auth/signup/      # SignupPage (container) + SignupForm + SignupScene
+    ├── home/             # Home
+    ├── profile/          # Editar perfil
+    ├── scraps/           # Recados
+    ├── album/            # Álbum
+    ├── feeds/            # Feeds
+    ├── messages/         # Mensagens (lista + conversa)
+    ├── testimonials/     # Depoimentos
+    ├── settings/         # Configurações
+    ├── friends/          # Amigos
+    └── community/        # Comunidade
 ```
 
 Documentação completa em [`../docs`](../docs).

@@ -26,6 +26,30 @@ OWASP ASVS. Cada item tem teste automatizado correspondente (ver [testing.md](te
 - Todas as queries são **parametrizadas** (sem concatenação de SQL).
 - Constraints no banco: e-mail minúsculo e com tamanho limitado, hash de token com 32 bytes.
 
+## Cadastro (A04, A07)
+
+- Validação com Zod no servidor (nome, e-mail normalizado, senha 8–128 com letras e
+  números, nascimento opcional com 13+ anos, sexo em lista fechada, aceite obrigatório
+  dos termos) e a mesma regra no formulário. Campos desconhecidos são descartados (sem
+  _mass assignment_).
+- Senha com Argon2id; o aceite dos termos é registrado em `terms_accepted_at`.
+- `insert … on conflict do nothing`: dois cadastros simultâneos com o mesmo e-mail não
+  criam duplicata nem vazam erro do banco.
+- E-mail já usado responde `409 EMAIL_TAKEN` (necessário para a UX). Para limitar a
+  enumeração, o cadastro tem **rate limit próprio de 5 tentativas por IP a cada 15 min**,
+  em que todas as tentativas contam.
+- O cadastro já inicia a sessão com o mesmo cookie `HttpOnly`/`SameSite=Strict` do
+  login e passa pela verificação de Origin (CSRF).
+
+## Telas internas (frontend)
+
+- Nenhum conteúdo de usuário é renderizado como HTML: recados, mensagens,
+  depoimentos e tópicos usam interpolação do Angular (escapada).
+- Uploads de foto aceitam só `image/png` e `image/jpeg` de até 5 MB e ficam como
+  _object URL_ local até existir upload na API.
+- O `localStorage` guarda apenas preferências não sensíveis (tema, privacidade, idioma,
+  notificações), e só depois que o usuário altera algo; nenhum token ou dado pessoal.
+
 ## Autenticação e sessão (A07)
 
 - Senhas com **Argon2id** (19 MiB, t=2, p=1). Limite de 128 caracteres evita DoS no hashing.

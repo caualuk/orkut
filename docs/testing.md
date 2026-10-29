@@ -1,17 +1,19 @@
 # Testes
 
-## Resumo (28/10/2026)
+## Resumo (29/10/2026 · 0.2.0)
 
 | Suíte                                            | Ferramenta                                | Testes | Resultado                       |
 | ------------------------------------------------ | ----------------------------------------- | ------ | ------------------------------- |
-| Backend · unitários, integração HTTP e segurança | Vitest + Supertest                        | 58     | ✅ 58 passaram · cobertura ~90% |
-| Backend · banco real (Supabase)                  | Vitest + pg                               | 5      | ✅ 5 passaram                   |
-| Frontend · unitários                             | Vitest (Angular unit-test builder, jsdom) | 53     | ✅ 53 passaram                  |
-| E2E · UI com API simulada + full-stack real      | Playwright (desktop 1440 e mobile 390)    | 54     | ✅ 53 passaram · 1 pulado*      |
+| Backend · unitários, integração HTTP e segurança | Vitest + Supertest                        | 77     | ✅ 77 passaram                  |
+| Backend · banco real (Supabase)                  | Vitest + pg                               | 6      | ⏸ requer `backend/.env`*        |
+| Frontend · unitários                             | Vitest (Angular unit-test builder, jsdom) | 78     | ✅ 78 passaram                  |
+| E2E · UI com API simulada (login, cadastro, telas internas) | Playwright (desktop 1440 e mobile 390) | 102 | ✅ 100 passaram · 2 pulados** |
+| E2E · full-stack real                            | Playwright                                | —      | ⏸ requer `backend/.env`*        |
 | Lint                                             | ESLint / angular-eslint                   | —      | ✅ sem erros                    |
 | Dependências                                     | `npm audit`                               | —      | ✅ 0 vulnerabilidades           |
 
-\* "Ordem de foco" roda só no desktop (navegação por teclado não se aplica ao perfil mobile).
+\* Suítes que dependem do Supabase rodam com `backend/.env` preenchido (não versionado).
+\*\* "Ordem de foco" roda só no desktop e "drawer" só no mobile.
 
 ## Como executar
 
@@ -65,6 +67,24 @@ Os E2E full-stack usam o usuário do seed (`SEED_USER_EMAIL`/`SEED_USER_PASSWORD
   com `aria-pressed`, loading, alerta focado, escape de HTML (XSS).
 - `LoginPage`: hero, cena `aria-hidden`, navegação padrão, `returnUrl` interno/externo,
   loading e erro.
+
+### Cadastro e telas internas
+
+- **Backend**: `POST /api/auth/signup` — sucesso com cookie e sessão válida, hash da
+  senha, nascimento/sexo opcionais, normalização, `409` sem sessão, 9 casos de validação,
+  _mass assignment_, CSRF e rate limit; serviço e banco real (constraints da migration 002).
+- **Frontend (unitários)**: `SocialStore` (contadores, recados, curtidas, respostas,
+  amizade, conversas, depoimentos, enquete com voto único, tópicos, fotos, nome editado,
+  persistência só sob demanda), força da senha, regra de idade, navegação ativa, busca
+  sem acento e sorte do dia.
+- **E2E**: as 10 telas internas carregam com título e um único `h1`, **axe WCAG 2.1 AA sem
+  violações** e sem rolagem horizontal (desktop e mobile); rotas exigem sessão; fluxos de
+  aceitar amizade, filtrar/enviar/curtir recado, "Deixar scrap" endereçado, conversa,
+  aprovar depoimento, tema escuro persistente, busca/filtros de amigos, sair/entrar e
+  criar tópico em comunidade, editar perfil e drawer mobile. Cadastro: design, axe,
+  validações, medidor de senha, sucesso → Home e `409`.
+
+Além dos testes, as telas foram comparadas com os frames do design em 1440, 834 e 390.
 
 ### E2E (Playwright)
 
