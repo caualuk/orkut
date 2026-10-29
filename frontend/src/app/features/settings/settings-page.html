@@ -1,0 +1,189 @@
+<div class="settings">
+  <nav class="side" aria-label="Seções das configurações">
+    <h1 class="mb-5 px-2 text-2xl font-bold text-ink max-lg:sr-only">Configurações</h1>
+    <ul class="flex flex-col gap-1">
+      @for (section of sections; track section.id) {
+        <li>
+          <button
+            type="button"
+            class="side-item"
+            [class.side-item--active]="active() === section.id"
+            [attr.aria-current]="active() === section.id ? 'true' : null"
+            (click)="goTo(section.id)"
+          >
+            <mat-icon aria-hidden="true" [fontIcon]="section.icon" />
+            {{ section.label }}
+          </button>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <div class="content">
+    <!-- Geral -->
+    <section id="config-geral" tabindex="-1" class="block" aria-labelledby="geral-title">
+      <h2 id="geral-title" class="eyebrow">Geral</h2>
+      <div class="group">
+        <div class="row">
+          <div class="flex-1">
+            <p class="row-title">E-mail da conta</p>
+            <p class="row-desc">{{ auth.user()?.email }}</p>
+          </div>
+        </div>
+        <div class="row">
+          <label for="config-language" class="flex-1">
+            <span class="row-title block">Idioma</span>
+            <span class="row-desc block">Idioma da interface</span>
+          </label>
+          <select
+            id="config-language"
+            class="ok-input !min-h-11 !w-auto !py-2 text-sm"
+            [value]="store.settings().language"
+            (change)="store.updateSettings({ language: $any($event.target).value })"
+          >
+            <option value="pt-BR" [selected]="store.settings().language === 'pt-BR'">
+              Português (BR)
+            </option>
+            <option value="en" [selected]="store.settings().language === 'en'">English</option>
+            <option value="es" [selected]="store.settings().language === 'es'">Español</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacidade -->
+    <section
+      id="config-privacidade"
+      tabindex="-1"
+      class="block"
+      aria-labelledby="privacidade-title"
+    >
+      <h2 id="privacidade-title" class="eyebrow">Privacidade</h2>
+      <p class="mb-4 hidden text-sm text-ink-secondary lg:block">
+        Controle quem vê suas informações e como você aparece no orkut.
+      </p>
+      <div class="group">
+        <div class="row">
+          <label for="config-scraps" class="flex-1">
+            <span class="row-title block">Quem pode ver meus recados</span>
+            <span class="row-desc block">Recados públicos aparecem para qualquer visitante</span>
+          </label>
+          <select
+            id="config-scraps"
+            class="ok-input !min-h-11 !w-auto !py-2 text-sm"
+            [value]="store.settings().scrapVisibility"
+            (change)="store.updateSettings({ scrapVisibility: $any($event.target).value })"
+            data-testid="scrap-visibility"
+          >
+            @for (option of visibilityOptions; track option) {
+              <option [value]="option" [selected]="option === store.settings().scrapVisibility">
+                {{ visibilityLabels[option] }}
+              </option>
+            }
+          </select>
+        </div>
+        @for (toggle of toggles; track toggle.key) {
+          <div class="row">
+            <div class="flex-1">
+              <p class="row-title" [id]="'toggle-' + toggle.key">{{ toggle.title }}</p>
+              <p class="row-desc">{{ toggle.description }}</p>
+            </div>
+            <mat-slide-toggle
+              class="ok-switch"
+              [checked]="store.settings()[toggle.key]"
+              (change)="setToggle(toggle.key, $event.checked)"
+              [aria-labelledby]="'toggle-' + toggle.key"
+              [attr.data-testid]="'toggle-' + toggle.key"
+            />
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Notificações -->
+    <section
+      id="config-notificacoes"
+      tabindex="-1"
+      class="block"
+      aria-labelledby="notificacoes-title"
+    >
+      <h2 id="notificacoes-title" class="eyebrow">Notificações</h2>
+      <div class="group">
+        @for (toggle of notificationToggles; track toggle.key) {
+          <div class="row">
+            <p class="row-title flex-1" [id]="'notify-' + toggle.key">{{ toggle.title }}</p>
+            <mat-slide-toggle
+              class="ok-switch"
+              [checked]="store.settings().notifications[toggle.key]"
+              (change)="setNotification(toggle.key, $event.checked)"
+              [aria-labelledby]="'notify-' + toggle.key"
+            />
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Aparência -->
+    <section id="config-aparencia" tabindex="-1" class="block" aria-labelledby="aparencia-title">
+      <h2 id="aparencia-title" class="eyebrow">Aparência</h2>
+      <div
+        class="grid grid-cols-3 gap-3 tab:gap-4"
+        role="radiogroup"
+        aria-labelledby="aparencia-title"
+      >
+        @for (theme of themes; track theme.id) {
+          @let selected = store.settings().theme === theme.id;
+          <button
+            type="button"
+            role="radio"
+            class="theme"
+            [class.theme--selected]="selected"
+            [attr.aria-checked]="selected"
+            (click)="store.updateSettings({ theme: theme.id })"
+            [attr.data-testid]="'theme-' + theme.id"
+          >
+            <span [class]="'preview preview--' + theme.id" aria-hidden="true">
+              <span class="bar"></span><span class="box"></span>
+            </span>
+            <span
+              class="flex items-center gap-1.5 text-sm"
+              [class.font-bold]="selected"
+              [class.text-primary-strong]="selected"
+            >
+              <span class="radio" [class.radio--on]="selected" aria-hidden="true"></span>
+              {{ theme.label }}
+            </span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- Conta e segurança -->
+    <section id="config-conta" tabindex="-1" class="block" aria-labelledby="conta-title">
+      <h2 id="conta-title" class="eyebrow">Conta e segurança</h2>
+      <div class="group">
+        <a routerLink="/recuperar-senha" class="row hover:bg-surface-variant">
+          <mat-icon aria-hidden="true" fontIcon="key" class="text-ink-secondary" />
+          <span class="row-title flex-1">Alterar senha</span>
+          <mat-icon aria-hidden="true" fontIcon="chevron_right" class="text-ink-muted" />
+        </a>
+      </div>
+      <div class="danger mt-4">
+        <div class="flex-1">
+          <p class="font-bold text-danger">Desativar conta</p>
+          <p class="text-xs text-ink-secondary">
+            Seu perfil, recados e fotos ficarão ocultos até você voltar.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="ok-btn-outline !border-danger !text-danger"
+          (click)="deactivate()"
+          data-testid="deactivate"
+        >
+          Desativar
+        </button>
+      </div>
+    </section>
+  </div>
+</div>
