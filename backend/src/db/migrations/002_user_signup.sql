@@ -9,6 +9,18 @@ alter table app.users
   add column if not exists terms_accepted_at timestamptz;
 
 alter table app.users drop constraint if exists users_gender_valid;
+
+-- Bancos que já aplicaram a antiga 002_signup_profile.sql (branch de cadastro descontinuada)
+-- guardam o sexo em inglês: converte antes de recriar a constraint.
+update app.users
+   set gender = case gender
+                  when 'female' then 'feminino'
+                  when 'male' then 'masculino'
+                  when 'other' then 'outro'
+                  when 'undisclosed' then 'nao-informar'
+                end
+ where gender in ('female', 'male', 'other', 'undisclosed');
+
 alter table app.users
   add constraint users_gender_valid
   check (gender is null or gender in ('feminino', 'masculino', 'outro', 'nao-informar'));
