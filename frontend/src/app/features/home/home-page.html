@@ -1,0 +1,313 @@
+<div
+  class="grid gap-4 tab:grid-cols-[minmax(0,1fr)_256px] tab:gap-6 lg:grid-cols-[minmax(0,1fr)_312px]"
+>
+  <div class="flex min-w-0 flex-col gap-4 tab:gap-5">
+    <!-- Boas-vindas + estatísticas -->
+    <section class="ok-card ok-enter p-4 tab:p-6 lg:p-7" aria-labelledby="home-greeting">
+      <div class="flex items-center gap-4">
+        <ok-profile-photo
+          class="w-[68px] shrink-0 lg:!hidden tab:w-[84px]"
+          [src]="store.profile().photoUrl"
+          alt=""
+        />
+        <div class="min-w-0">
+          <h1
+            id="home-greeting"
+            class="text-[22px] font-bold tracking-[-0.01em] text-ink lg:text-[32px]"
+            data-testid="home-greeting"
+          >
+            <span class="tab:hidden">Olá</span><span class="hidden tab:inline">Bem-vindo(a)</span>,
+            {{ store.firstName() }} <span aria-hidden="true">✌</span>
+          </h1>
+          <p class="mt-1 flex items-center gap-1.5 text-xs text-ink-muted tab:hidden">
+            <span class="size-2 rounded-full bg-success" aria-hidden="true"></span>
+            online · {{ store.profile().visits.lastWeek }} visitas esta semana
+          </p>
+          @if (store.settings().showRecentVisitors) {
+            <p class="mt-1 hidden text-[13px] text-ink-secondary tab:block lg:hidden">
+              Visitantes recentes: {{ store.profile().recentVisitors.join(', ') }}
+            </p>
+          }
+        </div>
+      </div>
+
+      <ul class="mt-4 grid grid-cols-4 gap-2 tab:gap-3 lg:mt-6" aria-label="Seus números">
+        @for (stat of stats(); track stat.label) {
+          <li>
+            <a [routerLink]="stat.link" class="stat" [class.stat--highlight]="stat.highlight">
+              <span class="flex items-center justify-center gap-2 tab:justify-start">
+                <mat-icon
+                  aria-hidden="true"
+                  [fontIcon]="stat.icon"
+                  class="!hidden !size-5 !text-xl tab:!inline-block"
+                />
+                <span class="text-lg font-bold tab:text-xl">{{ stat.value }}</span>
+              </span>
+              <span class="text-[11px] text-ink-muted tab:text-xs">{{ stat.label }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+
+      <div class="mt-5 hidden space-y-1 text-[13px] text-ink-secondary lg:block">
+        <p>
+          Visualizações do perfil: desde {{ store.profile().visits.since }}:
+          {{ store.profile().visits.lastWeek }} · semana passada:
+          {{ store.profile().visits.lastWeek }} · ontem: {{ store.profile().visits.yesterday }}
+        </p>
+        @if (store.settings().showRecentVisitors) {
+          <p>Visitantes recentes: {{ store.profile().recentVisitors.join(', ') }}</p>
+        }
+      </div>
+
+      <ok-fortune-card class="mt-6 hidden lg:block" />
+
+      @if (!tipDismissed()) {
+        <div
+          class="mt-4 hidden items-center gap-3 rounded-2xl bg-surface-variant px-5 py-3.5 text-[13px] text-ink-secondary lg:flex"
+        >
+          <span aria-hidden="true">💡</span>
+          <span class="flex-1">Dica: importe seus contatos e reencontre amigos antigos.</span>
+          <a routerLink="/amigos" class="font-bold text-primary-strong hover:underline">Importar</a>
+          <button
+            type="button"
+            class="grid size-7 place-items-center rounded-full hover:bg-white"
+            aria-label="Dispensar dica"
+            (click)="tipDismissed.set(true)"
+          >
+            <mat-icon aria-hidden="true" fontIcon="close" class="!size-4 !text-base" />
+          </button>
+        </div>
+      }
+    </section>
+
+    <ok-fortune-card class="ok-enter lg:hidden" style="--i: 1" />
+
+    <!-- Amigos online (compact) -->
+    <section class="tab:hidden" aria-labelledby="online-title">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 id="online-title" class="text-lg font-bold text-ink">
+          Amigos online ({{ store.onlineFriends().length }})
+        </h2>
+        <a routerLink="/amigos" class="text-sm font-bold text-primary-strong">ver todos</a>
+      </div>
+      <ul class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
+        @for (friend of store.onlineFriends(); track friend.id) {
+          <li class="flex shrink-0 flex-col items-center gap-1.5">
+            <span class="rounded-full p-[3px] ring-[3px] ring-primary">
+              <ok-avatar [tone]="friend.tone" [size]="58" [label]="friend.name" />
+            </span>
+            <span class="text-xs text-ink-secondary">{{ friend.shortName }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <!-- Pedidos de amizade -->
+    @if (store.friendRequests().length) {
+      <section class="ok-card ok-enter p-4 tab:p-6" style="--i: 2" aria-labelledby="requests-title">
+        <h2 id="requests-title" class="mb-3.5 hidden text-lg font-bold text-ink lg:block">
+          Novos pedidos de amizade ({{ store.friendRequests().length }})
+        </h2>
+        <ul class="flex flex-col gap-3">
+          @for (request of store.friendRequests(); track request.id) {
+            <li class="flex items-center gap-3 rounded-2xl lg:bg-surface-variant lg:p-3.5">
+              <ok-avatar
+                [tone]="request.tone"
+                [initials]="request.initials"
+                shape="tile"
+                [size]="54"
+              />
+              <div class="min-w-0 flex-1">
+                <p class="font-bold text-ink">
+                  {{ request.name
+                  }}<span class="hidden tab:inline lg:hidden"> quer ser seu amigo</span>
+                </p>
+                <p class="text-xs text-ink-muted">
+                  <span class="tab:hidden">quer ser seu amigo</span>
+                  <span class="hidden lg:inline"
+                    >{{ request.name.split(' ')[0] }} é seu(sua) amigo(a)? ·
+                  </span>
+                  <span class="hidden tab:inline">{{ request.mutualFriends }} amigos em comum</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                class="ok-btn-primary !min-h-10 !px-6 max-tab:!size-10 max-tab:!p-0"
+                (click)="accept(request.id, request.name)"
+                [attr.aria-label]="'Sim, aceitar ' + request.name"
+                data-testid="accept-request"
+              >
+                <mat-icon aria-hidden="true" fontIcon="check" class="tab:!hidden" />
+                <span class="hidden tab:inline lg:hidden">Aceitar</span>
+                <span class="hidden lg:inline">Sim</span>
+              </button>
+              <button
+                type="button"
+                class="ok-btn-outline max-tab:!size-10 max-tab:!border-0 max-tab:!bg-surface-variant max-tab:!p-0 max-tab:!text-ink-secondary tab:max-lg:!hidden"
+                (click)="store.rejectFriendRequest(request.id)"
+                [attr.aria-label]="'Não, recusar ' + request.name"
+              >
+                <mat-icon aria-hidden="true" fontIcon="close" class="tab:!hidden" />
+                <span class="hidden lg:inline">Não</span>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <!-- Recados -->
+    <section class="ok-card ok-enter p-4 tab:p-6" style="--i: 3" aria-labelledby="scraps-title">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 id="scraps-title" class="text-lg font-bold text-ink">
+          <span class="lg:hidden">Recados recentes</span>
+          <span class="hidden lg:inline">Recados ({{ store.receivedScraps().length }})</span>
+        </h2>
+        <a
+          routerLink="/recados"
+          class="text-sm font-bold text-primary-strong hover:underline tab:max-lg:hidden"
+        >
+          ver todos <span aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <form class="composer mb-4 hidden tab:flex" (submit)="$event.preventDefault(); sendScrap()">
+        <label for="home-scrap" class="sr-only">Escreva um scrap</label>
+        <input
+          id="home-scrap"
+          class="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-muted"
+          placeholder="Escreva um scrap para seus amigos…"
+          [attr.maxlength]="maxScrapLength"
+          [value]="scrapDraft()"
+          (input)="scrapDraft.set($any($event.target).value)"
+          data-testid="home-scrap-input"
+        />
+        <button
+          type="submit"
+          class="ok-btn-primary !size-11 !min-h-0 !rounded-xl !p-0"
+          aria-label="Enviar scrap"
+          [disabled]="!scrapDraft().trim()"
+        >
+          <mat-icon aria-hidden="true" fontIcon="send" class="!size-5 !text-xl" />
+        </button>
+      </form>
+
+      <ul class="flex flex-col gap-4">
+        @for (scrap of recentScraps(); track scrap.id) {
+          <li class="flex gap-3.5">
+            <ok-avatar [tone]="scrap.tone" [size]="44" />
+            <div class="flex-1 rounded-2xl bg-surface-variant px-4 py-3">
+              <p class="text-[13px] font-bold text-ink">
+                {{ scrap.authorName }} · {{ scrap.createdAt }}
+              </p>
+              <p class="mt-1 text-sm text-ink-secondary">{{ scrap.text }}</p>
+            </div>
+          </li>
+        } @empty {
+          <li class="text-sm text-ink-muted">Nenhum recado por aqui ainda.</li>
+        }
+      </ul>
+    </section>
+  </div>
+
+  <!-- Coluna social -->
+  <div class="hidden min-w-0 flex-col gap-4 tab:flex">
+    <section class="ok-card ok-enter p-5" style="--i: 1" aria-labelledby="friends-title">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 id="friends-title" class="text-lg font-bold text-ink">
+          <span class="hidden lg:inline">Meus amigos</span><span class="lg:hidden">Amigos</span> ({{
+            store.friends().length
+          }})
+        </h2>
+        <a routerLink="/amigos" class="hidden text-[13px] font-bold text-primary-strong lg:inline">
+          ver todos
+        </a>
+      </div>
+      <label class="mb-4 hidden h-10 items-center gap-2 rounded-xl bg-surface-variant px-4 lg:flex">
+        <mat-icon aria-hidden="true" fontIcon="search" class="!size-4 !text-base text-ink-muted" />
+        <span class="sr-only">Buscar amigos</span>
+        <input
+          type="search"
+          class="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted"
+          placeholder="buscar amigos"
+          [value]="friendFilter()"
+          (input)="friendFilter.set($any($event.target).value)"
+        />
+      </label>
+      <ul class="grid grid-cols-3 gap-x-3 gap-y-4">
+        @for (friend of visibleFriends(); track friend.id; let i = $index) {
+          <li [class.max-lg:hidden]="i >= 6">
+            <a routerLink="/amigos" [queryParams]="{ busca: friend.name }" class="tile">
+              <ok-avatar
+                [fluid]="true"
+                [tone]="friend.tone"
+                [initials]="friend.initials"
+                shape="tile"
+                [size]="80"
+                [label]="friend.name"
+              />
+              <span class="mt-1.5 hidden truncate text-xs text-ink-secondary lg:block">
+                {{ friend.shortName }} ({{ friend.mutualFriends }})
+              </span>
+            </a>
+          </li>
+        } @empty {
+          <li class="col-span-3 text-sm text-ink-muted">Nenhum amigo encontrado.</li>
+        }
+      </ul>
+    </section>
+
+    <section class="ok-card ok-enter p-5" style="--i: 2" aria-labelledby="communities-title">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 id="communities-title" class="text-lg font-bold text-ink">
+          Comunidades ({{ store.myCommunities().length }})
+        </h2>
+        <a
+          routerLink="/comunidades"
+          class="hidden text-[13px] font-bold text-primary-strong lg:inline"
+        >
+          ver todas
+        </a>
+      </div>
+      <ul class="flex flex-col gap-2 lg:gap-3">
+        @for (community of topCommunities(); track community.id) {
+          <li>
+            <a
+              [routerLink]="['/comunidades', community.id]"
+              class="flex items-center gap-3 rounded-2xl text-sm text-ink-secondary hover:text-ink lg:bg-surface-variant lg:p-2.5"
+            >
+              <span class="hidden lg:block">
+                <ok-avatar [tone]="community.tone" shape="tile" [size]="44" />
+              </span>
+              <mat-icon
+                aria-hidden="true"
+                [fontIcon]="community.icon"
+                class="!size-4 !text-base lg:!hidden"
+              />
+              <span class="flex min-w-0 flex-col">
+                <span class="truncate lg:font-bold lg:text-ink">{{ community.name }}</span>
+                <span class="hidden text-[11px] text-ink-muted lg:block">
+                  {{ community.members }} membros
+                </span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+      <a routerLink="/comunidades" class="ok-btn-tonal mt-4 hidden w-full lg:flex">
+        + Descobrir comunidades
+      </a>
+    </section>
+
+    @if (birthdayNames()) {
+      <ok-fortune-card
+        class="ok-enter lg:hidden"
+        style="--i: 3"
+        eyebrow="Aniversários"
+        [message]="birthdayNames() + ' fazem anos hoje'"
+        emoji="🎂"
+      />
+    }
+  </div>
+</div>

@@ -1,62 +1,76 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
-import { AuthService } from '../../core/auth/auth.service';
-import { BrandLogo } from '../../shared/ui/brand-logo/brand-logo';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { RouterLink } from '@angular/router';
+import { SocialStore } from '../../core/social/social.store';
+import { normalize } from '../../layout/global-search/global-search';
+import { Avatar } from '../../shared/ui/avatar/avatar';
+import { ProfilePhoto } from '../../shared/ui/profile-photo/profile-photo';
+import { FortuneCard } from './fortune-card';
+
+const MAX_SCRAP_LENGTH = 1000;
 
 /**
- * Home autenticada (provisória). Valida o fluxo Login → Home e o logout até a
- * implementação da tela "Home · Desktop 1440".
+ * Home autenticada ("Home · Desktop 1440", "T · Home", "M · Home"): boas-vindas
+ * com estatísticas, sorte do dia, pedidos de amizade, recados recentes, amigos
+ * e comunidades.
  */
 @Component({
   selector: 'ok-home-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrandLogo, MatButtonModule, MatIconModule],
-  template: `
-    <header
-      class="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-divider bg-white/80 px-6 backdrop-blur-md"
-    >
-      <ok-brand-logo [size]="28" />
-      <button
-        mat-stroked-button
-        type="button"
-        (click)="logout()"
-        [disabled]="loggingOut()"
-        data-testid="logout-button"
-      >
-        <mat-icon aria-hidden="true" fontIcon="logout" />
-        Sair
-      </button>
-    </header>
-
-    <main class="mx-auto max-w-[1248px] px-6 py-12">
-      <h1 class="text-[28px] font-bold text-ink" data-testid="home-greeting">
-        Olá, {{ auth.user()?.displayName }}!
-      </h1>
-      <p class="mt-2 text-sm text-ink-secondary">
-        Você está conectado como <strong>{{ auth.user()?.email }}</strong
-        >.
-      </p>
-    </main>
-  `,
+  imports: [Avatar, FortuneCard, MatIconModule, ProfilePhoto, RouterLink],
+  templateUrl: './home-page.html',
+  styleUrl: './home-page.css',
 })
 export class HomePage {
-  protected readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
+  protected readonly store = inject(SocialStore);
+  private readonly snackBar = inject(MatSnackBar);
 
-  protected readonly loggingOut = signal(false);
+  protected readonly maxScrapLength = MAX_SCRAP_LENGTH;
+  protected readonly scrapDraft = signal('');
+  protected readonly friendFilter = signal('');
+  protected readonly tipDismissed = signal(false);
 
-  protected logout(): void {
-    this.loggingOut.set(true);
-    this.auth
-      .logout()
-      .pipe(finalize(() => this.loggingOut.set(false)))
-      .subscribe({
-        // Mesmo se a API falhar, o estado local já foi limpo: volta ao login.
-        complete: () => void this.router.navigateByUrl('/login'),
-        error: () => void this.router.navigateByUrl('/login'),
-      });
+  protected readonly stats = computed(() => [
+    { icon: 'mail', value: this.store.receivedScraps().length, label: 'recados', link: '/recados' },
+    { icon: 'photo_library', value: this.store.totalPhotos(), label: 'fotos', link: '/album' },
+    { icon: 'star', value: this.store.profile().fans, label: 'fãs', link: '/depoimentos' },
+    {
+      icon: 'auto_awesome',
+      value: this.store.unreadMessages(),
+      label: 'mensagens',
+      link: '/mensagens',
+      highlight: this.store.unreadMessages() > 0,
+    },
+  ]);
+
+  protected readonly recentScraps = computed(() => this.store.receivedScraps().slice(0, 2));
+
+  protected readonly visibleFriends = computed(() => {
+    const term = normalize(this.friendFilter());
+    return this.store
+      .friends()
+      .filter((friend) => !term || normalize(friend.name).includes(term))
+      .slice(0, 9);
+  });
+
+  protected readonly topCommunities = computed(() => this.store.myCommunities().slice(0, 3));
+
+  protected readonly birthdayNames = computed(() => {
+    const [first, second] = this.store.friends().filter((f) => f.bestFriend);
+    return [first?.shortName, second?.shortName].filter(Boolean).join(' e ');
+  });
+
+  protected sendScrap(): void {
+    const text = this.scrapDraft().trim();
+    if (!text) return;
+    this.store.sendScrap(text);
+    this.scrapDraft.set('');
+    this.snackBar.open('Scrap publicado no seu mural!', 'OK', { duration: 3000 });
+  }
+
+  protected accept(id: string, name: string): void {
+    this.store.acceptFriendRequest(id);
+    this.snackBar.open(`Agora você e ${name} são amigos!`, 'OK', { duration: 3000 });
   }
 }
