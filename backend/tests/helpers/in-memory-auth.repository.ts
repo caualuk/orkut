@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import type { AuthRepository } from '../../src/modules/auth/auth.repository.js';
-import type { NewSession, PublicUser, UserRecord } from '../../src/modules/auth/auth.types.js';
+import type {
+  NewSession,
+  NewUser,
+  PublicUser,
+  UserRecord,
+} from '../../src/modules/auth/auth.types.js';
 
 interface StoredSession extends NewSession {
   revokedAt: Date | null;
@@ -10,6 +15,8 @@ interface StoredSession extends NewSession {
 export class InMemoryAuthRepository implements AuthRepository {
   readonly users = new Map<string, UserRecord>();
   readonly sessions: StoredSession[] = [];
+  /** Dados completos recebidos em `createUser` (nascimento, sexo…). */
+  readonly created: NewUser[] = [];
 
   constructor(private readonly clock: () => Date = () => new Date()) {}
 
@@ -26,6 +33,13 @@ export class InMemoryAuthRepository implements AuthRepository {
 
   async findUserByEmail(email: string): Promise<UserRecord | null> {
     return [...this.users.values()].find((user) => user.email === email) ?? null;
+  }
+
+  async createUser(data: NewUser): Promise<UserRecord | null> {
+    if (await this.findUserByEmail(data.email)) return null;
+    const { email, displayName, passwordHash } = data;
+    this.created.push(data);
+    return this.addUser({ email, displayName, passwordHash });
   }
 
   async registerFailedLogin(userId: string, maxAttempts: number, lockMs: number): Promise<void> {

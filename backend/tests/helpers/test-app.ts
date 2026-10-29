@@ -61,7 +61,12 @@ export function buildTestApp(
     logger,
     authService: service,
     healthCheck: options.healthCheck ?? (async () => {}),
-    rateLimits: options.rateLimits ?? { windowMs: 60_000, globalMax: 1_000, loginMax: 1_000 },
+    rateLimits: options.rateLimits ?? {
+      windowMs: 60_000,
+      globalMax: 1_000,
+      loginMax: 1_000,
+      signupMax: 1_000,
+    },
   });
 
   return { app, repository, service, config };

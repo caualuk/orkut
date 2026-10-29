@@ -13,6 +13,7 @@ import { argon2Hasher } from '../../src/shared/security/password.js';
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 const email = `teste+${Date.now()}@orkut.test`;
 const password = 'senha-de-teste-123';
+const signupEmail = `cadastro+${Date.now()}@orkut.test`;
 
 describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
   let db: Database;
@@ -33,7 +34,7 @@ describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
   });
 
   afterAll(async () => {
-    await db.query('delete from app.users where email = $1', [email]);
+    await db.query('delete from app.users where email = any($1)', [[email, signupEmail]]);
     await db.end();
   });
 
@@ -103,5 +104,29 @@ describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
         'x',
       ]),
     ).rejects.toThrow(/users_email_lowercase/);
+  });
+
+  it('cadastra usuário com nascimento, sexo e aceite dos termos; recusa e-mail repetido', async () => {
+    const input = {
+      firstName: 'Cadastro',
+      lastName: 'Teste',
+      email: signupEmail,
+      password: 'senha-teste-123',
+      birthDate: '1994-03-12',
+      gender: 'masculino' as const,
+    };
+    const { user, token } = await service.signup(input, ctx);
+    expect(user.displayName).toBe('Cadastro Teste');
+    await expect(service.getUserFromSession(token)).resolves.toEqual(user);
+
+    const { rows } = await db.query<{ birth: string; gender: string; terms: boolean }>(
+      `select to_char(birth_date, 'YYYY-MM-DD') as birth, gender,
+              terms_accepted_at is not null as terms
+         from app.users where id = $1`,
+      [user.id],
+    );
+    expect(rows[0]).toEqual({ birth: '1994-03-12', gender: 'masculino', terms: true });
+
+    await expect(service.signup(input, ctx)).rejects.toMatchObject({ code: 'EMAIL_TAKEN' });
   });
 });

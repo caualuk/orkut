@@ -119,4 +119,36 @@ describe('AuthService', () => {
     await service.logout(token);
     await expect(service.getUserFromSession(token)).resolves.toBeNull();
   });
+
+  describe('signup', () => {
+    const signupInput = {
+      firstName: 'Nina',
+      lastName: 'Costa',
+      email: 'nina@orkut.com',
+      password: 'saudade2004',
+      birthDate: '1995-03-12',
+      gender: 'feminino' as const,
+    };
+
+    it('cria o usuário com hash da senha e inicia sessão não persistente', async () => {
+      const result = await service.signup(signupInput, context);
+
+      expect(result.user).toEqual({
+        id: expect.any(String),
+        email: 'nina@orkut.com',
+        displayName: 'Nina Costa',
+      });
+      expect(result.persistent).toBe(false);
+      expect(result.expiresAt.getTime() - now.getTime()).toBe(12 * HOUR);
+      expect(repository.created[0]?.passwordHash).toBe('hashed:saudade2004');
+      await expect(service.getUserFromSession(result.token)).resolves.toEqual(result.user);
+    });
+
+    it('recusa e-mail já cadastrado com EMAIL_TAKEN e não cria sessão', async () => {
+      await expect(
+        service.signup({ ...signupInput, email: TEST_USER.email }, context),
+      ).rejects.toMatchObject({ status: 409, code: 'EMAIL_TAKEN' });
+      expect(repository.sessions).toHaveLength(0);
+    });
+  });
 });
