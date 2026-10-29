@@ -20,6 +20,7 @@ export async function mockAuthApi(page: Page, options: MockApiOptions = {}) {
   const state = {
     authenticated: options.authenticated ?? false,
     loginRequests: [] as unknown[],
+    signupRequests: [] as unknown[],
   };
 
   const json = (route: Route, status: number, body: unknown) =>
@@ -55,6 +56,24 @@ export async function mockAuthApi(page: Page, options: MockApiOptions = {}) {
     }
     return json(route, 401, {
       error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha inválidos.' },
+    });
+  });
+
+  await page.route('**/api/auth/signup', (route) => {
+    const body = route.request().postDataJSON() as {
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+    state.signupRequests.push(body);
+    if (body.email === MOCK_USER.email) {
+      return json(route, 409, {
+        error: { code: 'EMAIL_TAKEN', message: 'Este e-mail já está em uso. Tente entrar.' },
+      });
+    }
+    state.authenticated = true;
+    return json(route, 201, {
+      user: { id: 'u-2', email: body.email, displayName: `${body.firstName} ${body.lastName}` },
     });
   });
 

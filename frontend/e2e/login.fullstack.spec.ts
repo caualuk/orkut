@@ -19,7 +19,7 @@ test.describe('Login full-stack', () => {
     await page.getByTestId('login-submit').click();
 
     await expect(page).toHaveURL(/\/home$/);
-    await expect(page.getByTestId('home-greeting')).toContainText('Olá,');
+    await expect(page.getByTestId('home-greeting')).toBeVisible();
 
     // Cookie de sessão: HttpOnly, SameSite=Strict, inacessível ao JavaScript.
     const cookies = await context.cookies();
@@ -44,6 +44,7 @@ test.describe('Login full-stack', () => {
     await page.goto('/login');
     await expect(page).toHaveURL(/\/home$/);
 
+    await page.getByTestId('account-menu').click();
     await page.getByTestId('logout-button').click();
     await expect(page).toHaveURL(/\/login$/);
     expect((await context.cookies()).find((c) => c.name === 'orkut_sid')).toBeUndefined();

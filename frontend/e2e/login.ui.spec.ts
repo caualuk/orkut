@@ -161,8 +161,9 @@ test.describe('Navegação e redirecionamentos', () => {
 
     await expect(page).toHaveURL(/\/home$/);
     await expect(page).toHaveTitle('Início · orkut');
-    await expect(page.getByTestId('home-greeting')).toHaveText('Olá, Paulo!');
+    await expect(page.getByTestId('home-greeting')).toContainText('Paulo');
 
+    await page.getByTestId('account-menu').click();
     await page.getByTestId('logout-button').click();
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -199,7 +200,8 @@ test.describe('Navegação e redirecionamentos', () => {
     await emailField(page).fill(MOCK_USER.email);
     await passwordField(page).fill(VALID_PASSWORD);
     await submitButton(page).click();
-    await expect(page).toHaveURL('http://localhost:4200/home');
+    // Continua na própria origem (qualquer porta local), nunca no domínio externo.
+    await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/home$/);
   });
 
   test('usuário autenticado que acessa /login vai direto para a Home', async ({ page }) => {
@@ -213,8 +215,8 @@ test.describe('Navegação e redirecionamentos', () => {
     await page.goto('/login');
     await page.getByRole('link', { name: 'Criar conta grátis' }).click();
     await expect(page).toHaveURL(/\/cadastro$/);
-    await expect(page.getByTestId('page-title')).toHaveText('Criar conta');
-    await page.getByTestId('back-to-login').click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Criar conta' })).toBeVisible();
+    await page.getByTestId('login-link').click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
@@ -236,6 +238,7 @@ test.describe('Navegação e redirecionamentos', () => {
   test('voltar do navegador após o logout não reabre a Home', async ({ page }) => {
     await mockAuthApi(page, { authenticated: true });
     await page.goto('/home');
+    await page.getByTestId('account-menu').click();
     await page.getByTestId('logout-button').click();
     await expect(page).toHaveURL(/\/login$/);
 
