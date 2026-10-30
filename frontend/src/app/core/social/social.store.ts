@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { toApiError } from '../http/api-error';
 import { API_BASE_URL } from '../http/api.config';
+import { prepareImageUpload } from './image-upload';
 import {
   toAlbum,
   toCommunityDetail,
@@ -67,6 +68,7 @@ const EMPTY_PROFILE: Profile = {
   contact: { phone: '', website: '' },
   professional: { education: '', company: '', role: '' },
   photoUrl: null,
+  music: null,
   fans: 0,
   visits: { since: '', total: 0, lastWeek: 0, yesterday: 0 },
   recentVisitors: [],
@@ -237,12 +239,19 @@ export class SocialStore {
       if (changes[key] !== undefined) body[key] = changes[key];
     }
     if (changes.birthday !== undefined) body['birthday'] = changes.birthday || null;
+    if (changes.music !== undefined) {
+      body['personal'] = {
+        musicId: changes.music?.videoId ?? '',
+        musicTitle: changes.music?.title ?? '',
+      };
+    }
     void this.send('/profile', body);
   }
 
   /** Envia a foto de perfil (JPG/PNG até 5 MB; o servidor confere o conteúdo). */
   async uploadProfilePhoto(file: File): Promise<boolean> {
-    const ok = await this.send('/profile/photo', file, file.type);
+    const upload = await prepareImageUpload(file);
+    const ok = await this.send('/profile/photo', upload, upload.type);
     if (ok) this.photoVersion = Date.now();
     await this.load();
     return ok;
@@ -506,7 +515,8 @@ export class SocialStore {
 
     let sent = 0;
     for (const file of accepted) {
-      if (await this.send(`/albums/${target}/photos`, file, file.type, false)) sent += 1;
+      const upload = await prepareImageUpload(file);
+      if (await this.send(`/albums/${target}/photos`, upload, upload.type, false)) sent += 1;
     }
     await this.load();
     return sent;
@@ -572,7 +582,7 @@ export class SocialStore {
       const dto = await firstValueFrom(
         this.http.get<CommunityDetailDto>(`${this.base}/communities/${encodeURIComponent(slug)}`),
       );
-      const detail = toCommunityDetail(this.base, dto, this.profileState().id);
+      const detail = toCommunityDetail(this.base, dto, this.profileState().id, this.photoVersion);
       this.communitiesState.update((list) =>
         list.some((c) => c.id === slug)
           ? list.map((c) => (c.id === slug ? detail : c))
@@ -591,7 +601,7 @@ export class SocialStore {
           q: query.trim(),
         }),
       );
-      return communities.map(toCommunitySummary);
+      return communities.map((c) => toCommunitySummary(this.base, c, this.photoVersion));
     } catch (error) {
       this.errorState.set(toApiError(error).message);
       return [];
@@ -614,6 +624,26 @@ export class SocialStore {
       this.errorState.set(toApiError(error).message);
       return null;
     }
+  }
+
+  /** Envia a foto da comunidade (só o dono; JPG/PNG, reduzida se for grande). */
+  async uploadCommunityPhoto(slug: string, file: File): Promise<boolean> {
+    const community = this.communityById(slug);
+    if (!community) return false;
+    const upload = await prepareImageUpload(file);
+    const ok = await this.send(`/communities/${community.dbId}/photo`, upload, upload.type, false);
+    if (ok) this.photoVersion = Date.now();
+    await this.loadCommunity(slug);
+    await this.load();
+    return ok;
+  }
+
+  async removeCommunityPhoto(slug: string): Promise<void> {
+    const community = this.communityById(slug);
+    if (!community) return;
+    await this.send(`/communities/${community.dbId}/photo/remove`, undefined, undefined, false);
+    await this.loadCommunity(slug);
+    await this.load();
   }
 
   toggleMembership(id: string): void {
@@ -759,9 +789,16 @@ export class SocialStore {
     );
     this.communitiesState.update((current) =>
       state.communities.map((dto) => {
-        const summary = toCommunitySummary(dto);
+        const summary = toCommunitySummary(base, dto, this.photoVersion);
         const detail = current.find((c) => c.id === summary.id && c.loaded);
-        return detail ? { ...detail, joined: summary.joined, members: summary.members } : summary;
+        return detail
+          ? {
+              ...detail,
+              joined: summary.joined,
+              members: summary.members,
+              photoUrl: summary.photoUrl,
+            }
+          : summary;
       }),
     );
   }

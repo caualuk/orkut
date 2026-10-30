@@ -216,6 +216,61 @@ test('Comunidades: cria a própria comunidade e publica um tópico', async ({ pa
   await expect(page.getByTestId('topic-list')).toContainText('Qual o melhor grão?');
 });
 
+test('Comunidades: o dono adiciona e remove a foto', async ({ page }) => {
+  await page.goto('/comunidades');
+  await page.getByTestId('create-community').click();
+  await page.getByTestId('form-name').fill('Fotos de viagem');
+  await page.getByTestId('form-category').fill('Turismo');
+  await page.getByTestId('form-submit').click();
+  await expect(page).toHaveURL(/\/comunidades\/fotos-de-viagem$/);
+
+  await page.getByTestId('community-photo-input').setInputFiles({
+    name: 'capa.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgo=', 'base64'),
+  });
+  await expect(page.getByText('Foto da comunidade atualizada!')).toBeVisible();
+  await expect(page.locator('.badge img')).toHaveAttribute('src', /\/communities\/.+\/photo\?v=/);
+
+  await page.getByTestId('community-photo-remove').click();
+  await expect(page.locator('.badge img')).toHaveCount(0);
+});
+
+test('Música do perfil: valida o link, salva e toca no mini player', async ({ page, isMobile }) => {
+  await page.route('https://www.youtube-nocookie.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: '<title>video</title>' }),
+  );
+  await page.goto('/perfil/editar');
+
+  await page.getByTestId('music-url').fill('https://evil.example/watch?v=dQw4w9WgXcQ');
+  await expect(page.getByText('Cole o link de um vídeo do YouTube.')).toBeVisible();
+
+  await page.getByTestId('music-url').fill('https://youtu.be/dQw4w9WgXcQ');
+  await page.getByTestId('music-title').fill('Anna Júlia');
+  await page.getByTestId(isMobile ? 'save-profile-mobile' : 'save-profile').click();
+  await expect(page.getByText('Perfil atualizado!')).toBeVisible();
+  expect(social.requests).toContainEqual(
+    expect.objectContaining({
+      path: '/profile',
+      body: expect.objectContaining({
+        personal: { musicId: 'dQw4w9WgXcQ', musicTitle: 'Anna Júlia' },
+      }),
+    }),
+  );
+
+  await expect(page.getByTestId('music-player')).toHaveCount(0);
+  await page.getByTestId('music-toggle').click();
+  const player = page.getByTestId('music-player');
+  await expect(player).toContainText('Anna Júlia');
+  await expect(player.locator('iframe')).toHaveAttribute(
+    'src',
+    /youtube-nocookie\.com\/embed\/dQw4w9WgXcQ\?autoplay=1/,
+  );
+
+  await page.getByTestId('music-close').click();
+  await expect(player).toHaveCount(0);
+});
+
 test('Editar perfil: sem a aba Pessoal e salvar atualiza o nome', async ({ page, isMobile }) => {
   await page.goto('/perfil/editar');
   await expect(page.getByRole('tab', { name: 'Pessoal' })).toHaveCount(0);

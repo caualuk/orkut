@@ -23,7 +23,7 @@ export const PRIMARY_NAV: NavItem[] = [
 /** Menu do perfil (coluna lateral no desktop, drawer no tablet/mobile). */
 export const PROFILE_MENU: NavItem[][] = [
   [
-    { label: 'Perfil', link: '/home', icon: 'radio_button_checked', exact: true },
+    { label: 'Perfil', link: '/home', icon: 'person', exact: true },
     { label: 'Recados', link: '/recados', icon: 'mail', counter: 'scraps' },
     { label: 'Álbum', link: '/album', icon: 'photo_library', counter: 'photos' },
   ],

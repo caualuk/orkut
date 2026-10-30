@@ -1,10 +1,14 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { SocialStore } from '../../core/social/social.store';
+import { MusicPlayerState } from './music-player';
 
 /**
- * Botão "♪" da Top App Bar: liga/desliga a música do perfil. Enquanto toca,
- * o ícone vira um equalizador animado.
+ * Botão "♪" da Top App Bar: toca a música escolhida em Editar perfil ou, sem
+ * música, leva até lá. Enquanto toca, o ícone vira um equalizador animado.
  */
 @Component({
   selector: 'ok-music-toggle',
@@ -17,8 +21,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       [class.music--on]="playing()"
       [attr.aria-pressed]="playing()"
       aria-label="Música do perfil"
-      [matTooltip]="playing() ? 'Pausar música do perfil' : 'Tocar música do perfil'"
-      (click)="playing.set(!playing())"
+      [matTooltip]="tooltip()"
+      (click)="toggle()"
       data-testid="music-toggle"
     >
       @if (playing()) {
@@ -83,5 +87,24 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   `,
 })
 export class MusicToggle {
-  protected readonly playing = signal(false);
+  private readonly store = inject(SocialStore);
+  private readonly player = inject(MusicPlayerState);
+  private readonly router = inject(Router);
+  private readonly snackBar = inject(MatSnackBar);
+
+  protected readonly playing = this.player.playing;
+  protected readonly tooltip = computed(() => {
+    const music = this.store.profile().music;
+    if (!music) return 'Escolher a música do perfil';
+    return `${this.playing() ? 'Parar' : 'Tocar'}: ${music.title}`;
+  });
+
+  protected toggle(): void {
+    if (this.store.profile().music) {
+      this.playing.update((playing) => !playing);
+      return;
+    }
+    void this.router.navigateByUrl('/perfil/editar');
+    this.snackBar.open('Cole um link do YouTube em "Música do perfil".', 'OK', { duration: 4000 });
+  }
 }

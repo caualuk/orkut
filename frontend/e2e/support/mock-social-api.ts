@@ -15,6 +15,12 @@ export const PEOPLE = {
 };
 
 type Json = Record<string, unknown>;
+
+/** PNG 1×1 válido, para a foto de comunidade simulada. */
+const PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+);
 const now = () => new Date().toISOString();
 const person = (p: { id: string; name: string }, online = false) => ({
   ...p,
@@ -164,11 +170,15 @@ export async function mockSocialApi(page: Page, state: SocialState = initialSoci
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/social/, '');
     const method = request.method();
-    const body = (request.postDataJSON?.() ?? null) as Json | null;
+    const isJson = request.headers()['content-type']?.includes('application/json');
+    const body = (isJson ? request.postDataJSON() : null) as Json | null;
     requests.push({ method, path, body });
     let match: RegExpMatchArray | null;
 
     if (method === 'GET' && path === '/state') return json(route, state);
+    if (method === 'GET' && /^\/communities\/[^/]+\/photo$/.test(path)) {
+      return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG });
+    }
     if (method === 'GET' && (match = path.match(/^\/communities\/([a-z0-9-]+)$/))) {
       const record = communities.get(match[1]!);
       return record
@@ -314,10 +324,17 @@ export async function mockSocialApi(page: Page, state: SocialState = initialSoci
           members: 1,
           visibility: 'pública',
           joined: true,
+          hasPhoto: false,
         };
         communities.set(slug, { summary, topics: [] });
         state.communities.push(summary);
         return json(route, { slug }, 201);
+      }
+      case !!(match = path.match(/^\/communities\/([^/]+)\/photo(\/remove)?$/)): {
+        const record = [...communities.values()].find((c) => c.summary.id === match![1]);
+        if (!record) return route.fulfill({ status: 404 });
+        record.summary['hasPhoto'] = !match![2];
+        return noContent(route);
       }
       case !!(match = path.match(/^\/communities\/([^/]+)\/(join|leave|topics)$/)): {
         const record = [...communities.values()].find((c) => c.summary.id === match![1]);

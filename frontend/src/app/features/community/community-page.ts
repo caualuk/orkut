@@ -25,6 +25,9 @@ import { injectCommunityDialogs } from './community-dialogs';
 
 type Tab = 'forum' | 'enquetes' | 'eventos' | 'membros';
 
+/** Fotos maiores são reduzidas no navegador antes do envio. */
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
 /** Comunidade ("Comunidade · Desktop 1440", "M · Comunidade"). */
 @Component({
   selector: 'ok-community-page',
@@ -46,6 +49,7 @@ export class CommunityPage {
     return community?.loaded ? community : undefined;
   });
   protected readonly loading = signal(true);
+  protected readonly uploading = signal(false);
   /** Ao trocar de comunidade, volta para a aba Fórum. */
   protected readonly tab = linkedSignal<string, Tab>({
     source: this.communityId,
@@ -106,6 +110,30 @@ export class CommunityPage {
       'OK',
       { duration: 3000 },
     );
+  }
+
+  protected async onPhoto(files: FileList | null): Promise<void> {
+    const file = files?.[0];
+    const community = this.community();
+    if (!file || !community) return;
+    if (!/^image\/(png|jpeg)$/.test(file.type) || file.size > MAX_PHOTO_BYTES) {
+      this.snackBar.open('Use uma imagem JPG ou PNG de até 10 MB.', 'OK', { duration: 4000 });
+      return;
+    }
+    this.uploading.set(true);
+    const ok = await this.store.uploadCommunityPhoto(community.id, file);
+    this.uploading.set(false);
+    this.snackBar.open(ok ? 'Foto da comunidade atualizada!' : 'Não foi possível enviar a foto.', 'OK', {
+      duration: 3000,
+    });
+  }
+
+  protected async removePhoto(): Promise<void> {
+    const community = this.community();
+    if (!community) return;
+    this.uploading.set(true);
+    await this.store.removeCommunityPhoto(community.id);
+    this.uploading.set(false);
   }
 
   protected async share(): Promise<void> {

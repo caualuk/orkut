@@ -43,6 +43,8 @@ export interface Profile {
   contact: { phone: string; website: string };
   professional: { education: string; company: string; role: string };
   photoUrl: string | null;
+  /** Música do perfil (vídeo do YouTube), tocada pelo botão ♪. */
+  music: { videoId: string; title: string } | null;
   fans: number;
   visits: { since: string; total: number; lastWeek: number; yesterday: number };
   recentVisitors: string[];
@@ -188,6 +190,8 @@ export interface Community {
   dbId: string;
   name: string;
   icon: string;
+  /** Foto enviada pelo dono; sem ela, o ícone sobre o gradiente. */
+  photoUrl: string | null;
   tone: Tone;
   category: string;
   members: string;

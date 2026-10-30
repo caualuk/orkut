@@ -250,6 +250,19 @@ export function createSocialRouter({ repository, requireAuth }: SocialRouterDeps
     if (!community) throw AppError.notFound('Comunidade não encontrada.');
     res.json(community);
   });
+  router.post('/communities/:id/photo', image, async (req, res) => {
+    const result = await repository.setCommunityPhoto(me(res), param(req, 'id'), readImage(req));
+    if (result === 'forbidden') throw AppError.forbidden('Só o dono pode trocar a foto.');
+    done(res, result);
+  });
+  router.post('/communities/:id/photo/remove', async (req, res) => {
+    const result = await repository.removeCommunityPhoto(me(res), param(req, 'id'));
+    if (result === 'forbidden') throw AppError.forbidden('Só o dono pode remover a foto.');
+    done(res, result);
+  });
+  router.get('/communities/:id/photo', async (req, res) => {
+    sendImage(res, await repository.getCommunityPhoto(param(req, 'id')));
+  });
   router.post('/communities/:id/join', async (req, res) => {
     done(res, await repository.joinCommunity(me(res), param(req, 'id')));
   });

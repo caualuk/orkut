@@ -85,6 +85,7 @@ nada de dados de exemplo. Leitura em um único `GET /state`; ações em `POST` (
 | Álbum        | `POST /albums`, `/albums/:id/{photos,delete}`, `GET /photos/:id`, `/photos/:id/delete`                                                                                     | foto só aparece para quem a visibilidade do álbum permite      |
 | Feed         | `POST /status`, `/feed/like`, `/feed/comment`                                                                                                                              | status, fotos novas, comunidades e amizades dos amigos         |
 | Comunidades  | `POST /communities` (criar), `/communities/search`, `GET /communities/:slug`, `/communities/:id/{join,leave,topics,polls,events}`, `/polls/:id/vote`, `/events/:id/attend` | só membros publicam/votam; voto único; dono não sai            |
+| Foto da comunidade | `POST /communities/:id/photo` (JPG/PNG cru ≤ 5 MB), `…/photo/remove`, `GET /communities/:id/photo`                                                                         | só o dono altera; imagem conferida por _magic bytes_           |
 
 ### Banco de dados
 
@@ -105,6 +106,10 @@ Schema `app` (fora do `public`, portanto **não exposto** pela API REST automát
   `feed_likes`, `feed_comments`. Funções `app.friend_ids`, `app.are_friends`,
   `app.is_online` e `app.mutual_friends` (com `search_path` vazio). Tudo com
   `on delete cascade` a partir de `app.users`.
+
+- **Foto da comunidade (migration 004)**: `community_photos` (`bytea` ≤ 5 MB, uma por
+  comunidade, `on delete cascade`). A música do perfil não tem tabela: fica em
+  `profiles.personal` (`musicId`, `musicTitle`).
 
 RLS habilitado em todas as tabelas e privilégios revogados das roles `anon`/`authenticated`.
 
@@ -229,6 +234,9 @@ Itens do spec de movimento e componentes:
   adicionar amigos, publicar status ou criar comunidade) até haver atividade real.
 - **Visitas ao perfil** só passam a contar quando existir a página de perfil de outros
   membros; até lá os contadores ficam em zero.
+- **Música do perfil** só toca para o próprio usuário enquanto não existir a página de
+  perfil de outros membros. Vem do YouTube em player visível: alguns vídeos não permitem
+  incorporação e, nesse caso, o próprio player avisa.
 - **Sincronização** por polling (20 s), sem WebSocket: mensagens novas aparecem em até
   20 s.
 - **Desativar conta** pede confirmação e encerra a sessão; ocultar o perfil de fato

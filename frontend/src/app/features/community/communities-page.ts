@@ -98,8 +98,15 @@ import { injectCommunityDialogs } from './community-dialogs';
               data-testid="community-link"
             >
               <span class="relative shrink-0">
-                <ok-avatar [tone]="community.tone" shape="tile" [size]="48" />
-                <mat-icon aria-hidden="true" [fontIcon]="community.icon" class="icon" />
+                <ok-avatar
+                  [tone]="community.tone"
+                  [src]="community.photoUrl"
+                  shape="tile"
+                  [size]="48"
+                />
+                @if (!community.photoUrl) {
+                  <mat-icon aria-hidden="true" [fontIcon]="community.icon" class="icon" />
+                }
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block truncate font-bold text-ink">{{ community.name }}</span>

@@ -24,6 +24,11 @@
   background: radial-gradient(closest-side, rgb(230 227 238 / 67%), rgb(230 227 238 / 0%));
 }
 
+/* No tema escuro a luz inferior também é rosa, igual à do canto superior. */
+:host-context(:root[data-theme='dark']) .blob--lavender {
+  background: radial-gradient(closest-side, rgb(248 187 208 / 25%), rgb(248 187 208 / 0%));
+}
+
 .skip-link {
   position: absolute;
   left: 16px;

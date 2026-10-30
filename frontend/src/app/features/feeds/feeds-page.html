@@ -86,7 +86,12 @@
             @let community = store.communityById(item.communityId);
             @if (community) {
               <div class="mt-4 flex items-center gap-4 rounded-2xl bg-surface-variant p-3.5">
-                <ok-avatar [tone]="community.tone" shape="tile" [size]="54" />
+                <ok-avatar
+                  [tone]="community.tone"
+                  [src]="community.photoUrl"
+                  shape="tile"
+                  [size]="54"
+                />
                 <div class="min-w-0 flex-1">
                   <a
                     [routerLink]="['/comunidades', community.id]"

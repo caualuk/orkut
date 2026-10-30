@@ -288,7 +288,12 @@
               class="flex items-center gap-3 rounded-2xl text-sm text-ink-secondary hover:text-ink lg:bg-surface-variant lg:p-2.5"
             >
               <span class="hidden lg:block">
-                <ok-avatar [tone]="community.tone" shape="tile" [size]="44" />
+                <ok-avatar
+                  [tone]="community.tone"
+                  [src]="community.photoUrl"
+                  shape="tile"
+                  [size]="44"
+                />
               </span>
               <mat-icon
                 aria-hidden="true"

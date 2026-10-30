@@ -1,5 +1,5 @@
 import type { Database } from '../../db/pool.js';
-import { person, TOUCH_PROFILE } from './sql.js';
+import { communityHasPhoto, person, TOUCH_PROFILE } from './sql.js';
 import {
   DEFAULT_SETTINGS,
   type AlbumDto,
@@ -783,6 +783,7 @@ export class PgSocialRepository {
                 m.joined_at, jsonb_build_object('community', jsonb_build_object(
                   'id', c.id, 'slug', c.slug, 'name', c.name, 'icon', c.icon,
                   'category', c.category, 'visibility', c.visibility,
+                  'hasPhoto', ${communityHasPhoto('c')},
                   'members', (select count(*)::int from app.community_members cm
                                where cm.community_id = c.id),
                   'joined', exists (select 1 from app.community_members cm
@@ -858,6 +859,7 @@ export class PgSocialRepository {
   async listCommunities(userId: string, query = ''): Promise<CommunitySummaryDto[]> {
     const { rows } = await this.db.query<CommunitySummaryDto>(
       `select c.id, c.slug, c.name, c.icon, c.category, c.visibility,
+              ${communityHasPhoto('c')} as "hasPhoto",
               (select count(*)::int from app.community_members m where m.community_id = c.id) as members,
               exists (select 1 from app.community_members m
                        where m.community_id = c.id and m.user_id = $1) as joined
@@ -908,6 +910,7 @@ export class PgSocialRepository {
       `select json_build_object(
                 'id', c.id, 'slug', c.slug, 'name', c.name, 'icon', c.icon,
                 'category', c.category, 'visibility', c.visibility, 'about', c.about,
+                'hasPhoto', ${communityHasPhoto('c')},
                 'createdAt', c.created_at, 'language', c.language, 'location', c.location,
                 'owner', ${person('o')},
                 'members', (select count(*)::int from app.community_members m where m.community_id = c.id),
@@ -923,6 +926,7 @@ export class PgSocialRepository {
                   select json_agg(json_build_object(
                            'id', rc.id, 'slug', rc.slug, 'name', rc.name, 'icon', rc.icon,
                            'category', rc.category, 'visibility', rc.visibility,
+                           'hasPhoto', ${communityHasPhoto('rc')},
                            'members', (select count(*)::int from app.community_members m
                                         where m.community_id = rc.id),
                            'joined', exists (select 1 from app.community_members m
@@ -974,6 +978,50 @@ export class PgSocialRepository {
       [userId, slug],
     );
     return rows[0]?.item ?? null;
+  }
+
+  /** Só o dono troca a foto da comunidade. */
+  async setCommunityPhoto(
+    userId: string,
+    communityId: string,
+    image: StoredImage,
+  ): Promise<ActionResult> {
+    const access = await this.communityOwnership(userId, communityId);
+    if (access !== 'ok') return access;
+    await this.db.query(
+      `insert into app.community_photos (community_id, mime_type, data) values ($1, $2, $3)
+       on conflict (community_id) do update
+         set mime_type = excluded.mime_type, data = excluded.data, updated_at = now()`,
+      [communityId, image.mimeType, image.data],
+    );
+    return 'ok';
+  }
+
+  async removeCommunityPhoto(userId: string, communityId: string): Promise<ActionResult> {
+    const access = await this.communityOwnership(userId, communityId);
+    if (access !== 'ok') return access;
+    await this.db.query('delete from app.community_photos where community_id = $1', [communityId]);
+    return 'ok';
+  }
+
+  /** Fotos de comunidade são visíveis para qualquer membro autenticado da rede. */
+  async getCommunityPhoto(communityId: string): Promise<StoredImage | null> {
+    const { rows } = await this.db.query<{ mime_type: string; data: Buffer }>(
+      'select mime_type, data from app.community_photos where community_id = $1',
+      [communityId],
+    );
+    const row = rows[0];
+    return row ? { mimeType: row.mime_type, data: row.data } : null;
+  }
+
+  private async communityOwnership(userId: string, communityId: string): Promise<ActionResult> {
+    const { rows } = await this.db.query<{ owner_id: string }>(
+      'select owner_id from app.communities where id = $1',
+      [communityId],
+    );
+    const community = rows[0];
+    if (!community) return 'not-found';
+    return community.owner_id === userId ? 'ok' : 'forbidden';
   }
 
   async joinCommunity(userId: string, communityId: string): Promise<ActionResult> {

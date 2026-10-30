@@ -7,6 +7,12 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Adicionado
 
+- **Foto da comunidade**: o dono adiciona, troca ou remove a imagem pela câmera na capa; ela
+  aparece na página, na lista de comunidades, no Início e nos Feeds. Exige a migration
+  `004_community_photos`.
+- **Música do perfil**: link do YouTube e nome da música em Editar perfil; o botão ♪ toca em
+  um mini player visível, sem carregar nada do YouTube antes do clique.
+- **Fotos grandes** são reduzidas no navegador antes do envio (limite de 4,5 MB da Vercel).
 - **Deploy na Vercel** em um único projeto: Angular estático + Express como Serverless
   Function (`api/index.mjs`), com fallback de SPA e cabeçalhos de segurança; passo a passo
   em `docs/deploy.md`.
@@ -43,6 +49,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Corrigido
 
+- Ícones de Editar perfil e demais telas não ficam mais cortados.
+- Menu do perfil volta a mostrar o ícone de usuário em **Perfil**.
+- Tema escuro: a luz branca do canto inferior esquerdo agora é rosa, como a do canto superior.
 - Cursor de texto piscando ao clicar em conteúdo estático.
 
 ## [0.2.0] — 2026-10-29

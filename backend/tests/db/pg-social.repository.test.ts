@@ -152,6 +152,20 @@ describe.skipIf(!hasDatabase)('PgSocialRepository (PostgreSQL)', () => {
     expect(detail.friendsInside.map((p) => p.id)).toEqual([ana]);
   });
 
+  it('foto da comunidade: só o dono troca e remove', async () => {
+    const created = (await repo.getCommunity(bia, communitySlug!))!;
+    const image = { mimeType: 'image/png', data: PNG };
+
+    expect(await repo.setCommunityPhoto(bia, created.id, image)).toBe('forbidden');
+    expect(await repo.setCommunityPhoto(ana, created.id, image)).toBe('ok');
+    expect((await repo.getCommunity(bia, communitySlug!))!.hasPhoto).toBe(true);
+    expect(await repo.getCommunityPhoto(created.id)).toMatchObject({ mimeType: 'image/png' });
+
+    expect(await repo.removeCommunityPhoto(bia, created.id)).toBe('forbidden');
+    expect(await repo.removeCommunityPhoto(ana, created.id)).toBe('ok');
+    expect((await repo.getCommunity(bia, communitySlug!))!.hasPhoto).toBe(false);
+  });
+
   it('busca de pessoas trata curingas do LIKE como texto', async () => {
     expect((await repo.searchPeople(ana, 'Bia')).map((p) => p.id)).toContain(bia);
     expect(await repo.searchPeople(ana, '%')).toEqual([]);

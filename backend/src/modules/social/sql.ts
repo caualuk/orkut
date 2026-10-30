@@ -11,6 +11,10 @@ export const person = (alias: string): string => `json_build_object(
   'hasPhoto', exists (select 1 from app.profile_photos pp where pp.user_id = ${alias}.id)
 )`;
 
+/** Se a comunidade (alias de app.communities) tem foto. */
+export const communityHasPhoto = (alias: string): string =>
+  `exists (select 1 from app.community_photos cp where cp.community_id = ${alias}.id)`;
+
 /** Garante a linha de perfil e registra a última atividade (no máximo 1×/min). */
 export const TOUCH_PROFILE = `
   insert into app.profiles (user_id, first_name, last_name, last_seen_at)

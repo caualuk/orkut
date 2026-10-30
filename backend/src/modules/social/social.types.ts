@@ -186,6 +186,7 @@ export interface CommunitySummaryDto {
   members: number;
   visibility: 'pública' | 'moderada';
   joined: boolean;
+  hasPhoto: boolean;
 }
 
 export interface TopicDto {

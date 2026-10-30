@@ -29,6 +29,9 @@ function fakeRepository() {
     searchPeople: vi.fn(async () => []),
     createCommunity: vi.fn(async (_user: string, data: { slug: string }) => data.slug),
     getCommunity: vi.fn(async () => null),
+    setCommunityPhoto: vi.fn(async () => 'ok'),
+    removeCommunityPhoto: vi.fn(async () => 'ok'),
+    getCommunityPhoto: vi.fn(async () => null),
     toggleFeedLike: vi.fn(async () => {}),
     commentOnFeed: vi.fn(async () => {}),
   };
@@ -151,6 +154,39 @@ describe('Rotas /api/social', () => {
       .set('Cookie', cookie);
     expect(invalid.status).toBe(404);
     expect(repo.getProfilePhoto).toHaveBeenCalledTimes(1);
+  });
+
+  it('foto da comunidade: só o dono altera e arquivos disfarçados são recusados', async () => {
+    const send = (body: Buffer) =>
+      request(ctx.app)
+        .post(`/api/social/communities/${FRIEND}/photo`)
+        .set('Origin', TEST_ORIGIN)
+        .set('Cookie', cookie)
+        .set('Content-Type', 'image/png')
+        .send(body);
+
+    expect((await send(PNG)).status).toBe(204);
+    expect(repo.setCommunityPhoto).toHaveBeenCalledWith(expect.any(String), FRIEND, {
+      mimeType: 'image/png',
+      data: PNG,
+    });
+
+    expect((await send(Buffer.from('<svg onload=alert(1)>'))).status).toBe(400);
+
+    repo.setCommunityPhoto.mockResolvedValueOnce('forbidden');
+    expect((await send(PNG)).status).toBe(403);
+
+    repo.removeCommunityPhoto.mockResolvedValueOnce('forbidden');
+    const remove = await request(ctx.app)
+      .post(`/api/social/communities/${FRIEND}/photo/remove`)
+      .set('Origin', TEST_ORIGIN)
+      .set('Cookie', cookie);
+    expect(remove.status).toBe(403);
+
+    const missing = await request(ctx.app)
+      .get(`/api/social/communities/${FRIEND}/photo`)
+      .set('Cookie', cookie);
+    expect(missing.status).toBe(404);
   });
 
   it('comunidade: gera o slug a partir do nome e tenta sufixos quando já existe', async () => {

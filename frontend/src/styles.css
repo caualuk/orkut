@@ -106,6 +106,14 @@
 }
 
 @layer utilities {
+  /*
+   * Ícones menores que 24px herdavam a altura de linha de 24px e saíam cortados
+   * (ex.: lápis de "Editar perfil"). Na camada para vencer o !important do Material.
+   */
+  .mat-icon.mat-ligature-font {
+    line-height: 1 !important;
+  }
+
   /* Variante preenchida dos Material Symbols (ex.: coração de "Curtir"). */
   .icon-filled {
     font-variation-settings: 'FILL' 1;

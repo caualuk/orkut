@@ -51,6 +51,44 @@
   color: #fff;
 }
 
+/* Câmera do dono: adiciona ou troca a foto da comunidade. */
+.photo-btn {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 999px;
+  border: 2px solid var(--color-surface);
+  background: var(--color-primary-bold);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 150ms var(--ease-emphasized);
+}
+
+.photo-btn:hover {
+  transform: scale(1.08);
+}
+
+.photo-btn:focus-within {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.photo-btn--remove {
+  right: auto;
+  left: -8px;
+  background: var(--color-surface-variant);
+  color: var(--color-ink);
+}
+
+.photo-btn.is-busy {
+  cursor: progress;
+  opacity: 0.6;
+}
+
 .topic {
   display: flex;
   align-items: center;

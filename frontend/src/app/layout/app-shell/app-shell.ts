@@ -19,6 +19,7 @@ import { ThemeService } from '../../core/theme/theme.service';
 import { BrandLogo } from '../../shared/ui/brand-logo/brand-logo';
 import { ProfilePhoto } from '../../shared/ui/profile-photo/profile-photo';
 import { GlobalSearch } from '../global-search/global-search';
+import { MusicPlayer } from '../music-toggle/music-player';
 import { MusicToggle } from '../music-toggle/music-toggle';
 import { NavCounterPipe } from '../nav-counter';
 import { BOTTOM_NAV, FOOTER_LINKS, PRIMARY_NAV, RAIL_NAV, type NavItem } from '../navigation';
@@ -41,6 +42,7 @@ import { injectCurrentUrl, injectShellRouteData, isNavItemActive } from '../rout
     GlobalSearch,
     MatIconModule,
     MatMenuModule,
+    MusicPlayer,
     MusicToggle,
     NavCounterPipe,
     ProfileCard,

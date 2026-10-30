@@ -53,6 +53,7 @@ export interface ProfileDto {
   social: Record<string, string>;
   contact: Record<string, string>;
   professional: Record<string, string>;
+  personal?: Record<string, string>;
   hasPhoto: boolean;
   fans: number;
   memberSince: string;
@@ -145,6 +146,7 @@ export interface CommunitySummaryDto {
   members: number;
   visibility: 'pública' | 'moderada';
   joined: boolean;
+  hasPhoto: boolean;
 }
 
 export interface CommunityDetailDto extends CommunitySummaryDto {
@@ -240,6 +242,9 @@ export function toProfile(base: string, dto: ProfileDto, photoVersion: number): 
     },
     // `v` força o navegador a buscar a foto nova depois de um upload.
     photoUrl: dto.hasPhoto ? `${userPhotoUrl(base, dto.id)}?v=${photoVersion}` : null,
+    music: dto.personal?.['musicId']
+      ? { videoId: dto.personal['musicId'], title: dto.personal['musicTitle'] ?? '' }
+      : null,
     fans: dto.fans,
     visits: { since: monthYear(dto.memberSince), ...dto.visits },
     recentVisitors: dto.recentVisitors.map((v) => firstNameOf(v.name)),
@@ -406,12 +411,17 @@ export function toFeedItem(base: string, dto: FeedItemDto): FeedItem {
   }
 }
 
-export function toCommunitySummary(dto: CommunitySummaryDto): Community {
+export function toCommunitySummary(
+  base: string,
+  dto: CommunitySummaryDto,
+  photoVersion: number,
+): Community {
   return {
     id: dto.slug,
     dbId: dto.id,
     name: dto.name,
     icon: dto.icon,
+    photoUrl: dto.hasPhoto ? `${base}/communities/${dto.id}/photo?v=${photoVersion}` : null,
     tone: toneFor(dto.id),
     category: dto.category,
     members: compactNumber(dto.members),
@@ -433,10 +443,15 @@ export function toCommunitySummary(dto: CommunitySummaryDto): Community {
   };
 }
 
-export function toCommunityDetail(base: string, dto: CommunityDetailDto, meId: string): Community {
+export function toCommunityDetail(
+  base: string,
+  dto: CommunityDetailDto,
+  meId: string,
+  photoVersion: number,
+): Community {
   const now = Date.now();
   return {
-    ...toCommunitySummary(dto),
+    ...toCommunitySummary(base, dto, photoVersion),
     about: dto.about,
     createdAt: shortDate(dto.createdAt),
     owner: dto.owner.name,
