@@ -3,8 +3,9 @@ import { ParallaxDirective } from '../../../../../shared/motion/parallax.directi
 
 /**
  * Cena decorativa de "Criar conta": cartões de vidro inclinados (comunidade,
- * amigos, fãs, scrap, depoimento, medidores e namoro) com parallax e flutuação.
- * Puramente visual (aria-hidden). No mobile só fica o cartão "248 amigos".
+ * amigos, fãs, scrap, depoimento, medidores e feed) com parallax e flutuação, sem
+ * pessoas ou números fictícios.
+ * Puramente visual (aria-hidden). No mobile só fica o cartão "seus amigos".
  */
 @Component({
   selector: 'ok-signup-scene',
@@ -17,18 +18,18 @@ import { ParallaxDirective } from '../../../../../shared/motion/parallax.directi
 
     <div class="card c-community" style="--d: 14px; --r: -6deg">
       <span class="tile tile--pink">zZ</span>
-      <span><b>Eu odeio acordar cedo</b><small>comunidade · 1,2 mi membros</small></span>
+      <span><b>Suas comunidades</b><small>crie ou entre nas que você curte</small></span>
     </div>
 
     <div class="card c-friends" style="--d: 26px; --r: 4deg">
-      <p class="flex justify-between"><b>amigos (248)</b><small class="pink">ver todos</small></p>
+      <p class="flex justify-between"><b>seus amigos</b><small class="pink">ver todos</small></p>
       <div class="grid">
-        <span><i class="t t-pink"></i>Ana</span>
-        <span><i class="t t-blue"></i>Lucas</span>
-        <span><i class="t t-orange"></i>Juliana</span>
-        <span><i class="t t-lavender"></i>Pedro</span>
-        <span><i class="t t-green"></i>Mari</span>
-        <span><i class="t t-more">+242</i>e mais</span>
+        <span><i class="t t-pink"></i>escola</span>
+        <span><i class="t t-blue"></i>faculdade</span>
+        <span><i class="t t-orange"></i>trabalho</span>
+        <span><i class="t t-lavender"></i>família</span>
+        <span><i class="t t-green"></i>vizinhos</span>
+        <span><i class="t t-more">+</i>e mais</span>
       </div>
     </div>
 
@@ -37,10 +38,10 @@ import { ParallaxDirective } from '../../../../../shared/motion/parallax.directi
         ><i class="t-pink"></i><i class="t-blue"></i><i class="t-orange"></i
         ><i class="t-lavender"></i
       ></span>
-      <b>248 amigos</b><small>esperando você</small>
+      <b>seus amigos</b><small>estão te esperando</small>
     </div>
 
-    <div class="card c-fans" style="--d: 10px; --r: 3deg"><b>★&nbsp;&nbsp;+126 fãs</b></div>
+    <div class="card c-fans" style="--d: 10px; --r: 3deg"><b>★&nbsp;&nbsp;seus fãs</b></div>
 
     <div class="card c-meter" style="--d: 18px; --r: -4deg">
       <span>confiável <em>☺ ☺ ☺</em></span>
@@ -50,15 +51,15 @@ import { ParallaxDirective } from '../../../../../shared/motion/parallax.directi
 
     <div class="card c-scrap" style="--d: 22px; --r: -5deg">
       <i class="t t-blue round"></i>
-      <span><b>Lucas Braga</b><small>deixou um scrap pra você ♥</small></span>
+      <span><b>Novo scrap</b><small>seus amigos estão te esperando ♥</small></span>
     </div>
 
     <div class="card c-testimonial" style="--d: 16px; --r: 5deg">
       <p class="flex items-center gap-2">
         <i class="t t-green round sm"></i
-        ><span><b>Mari Souza</b><small>escreveu um depoimento</small></span>
+        ><span><b>Novo depoimento</b><small>de um amigo seu</small></span>
       </p>
-      <p class="quote">“Amiga desde a 5ª série. Melhor pessoa do mundo, sem exagero!”</p>
+      <p class="quote">“O que seus amigos dizem sobre você aparece aqui.”</p>
       <p class="flex gap-2">
         <span class="pill pill--on">aceitar</span><span class="pill">ler depois</span>
       </p>
@@ -66,7 +67,7 @@ import { ParallaxDirective } from '../../../../../shared/motion/parallax.directi
 
     <div class="card c-dating" style="--d: 8px; --r: 1deg">
       <span class="dots"><i class="t-orange"></i><i class="t-lavender"></i></span>
-      <small>Juliana e Pedro agora estão namorando</small>
+      <small>novidades dos seus amigos no feed</small>
       <b class="pink">♥</b>
     </div>
   `,

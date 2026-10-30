@@ -240,7 +240,7 @@
   border: 2px solid #fff;
 }
 
-/* Mobile: só o cartão "248 amigos" no topo direito. */
+/* Mobile: só o cartão "seus amigos" no topo direito. */
 .c-mobile {
   display: flex;
   right: 20px;

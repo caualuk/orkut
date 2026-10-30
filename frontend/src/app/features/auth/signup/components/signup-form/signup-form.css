@@ -143,3 +143,50 @@ label:focus-within .photo-btn {
 .label--4 {
   color: #2e7d32;
 }
+
+.photo-btn--lg {
+  width: 96px;
+  height: 96px;
+  font-size: 34px;
+}
+
+/* Progresso das etapas: 2 segmentos que acendem em rosa. */
+.progress {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-divider);
+  transition: background-color 300ms var(--ease-emphasized);
+}
+
+.progress--on {
+  background: var(--color-primary);
+}
+
+/* Troca de etapa: o conteúdo entra deslizando dentro do mesmo card. */
+.step {
+  animation: step-in 350ms var(--ease-emphasized);
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+.back {
+  border: 1.5px solid var(--color-outline);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 150ms var(--ease-emphasized);
+}
+
+.back:hover:not(:disabled) {
+  background: var(--color-surface-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step {
+    animation-name: none;
+  }
+}

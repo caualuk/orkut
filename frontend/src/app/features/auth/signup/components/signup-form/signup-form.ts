@@ -1,9 +1,12 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
+  Injector,
   input,
   output,
   signal,
@@ -26,11 +29,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { map } from 'rxjs';
-import type { Gender, SignupData } from '../../../../../core/auth/auth.models';
+import type { Gender, Relationship, SignupData } from '../../../../../core/auth/auth.models';
 import { TiltDirective } from '../../../../../shared/motion/tilt.directive';
+import { photoError } from '../../../onboarding/onboarding-api';
 import { passwordStrength } from './password-strength';
 
 export const MIN_SIGNUP_AGE = 13;
+export const ABOUT_MAX_LENGTH = 500;
 
 /** Mesma regra da API: 8+ caracteres, com letras e números. */
 function passwordRule(control: AbstractControl<string>): ValidationErrors | null {
@@ -41,7 +46,7 @@ function passwordRule(control: AbstractControl<string>): ValidationErrors | null
     : { passwordRule: true };
 }
 
-/** Nascimento opcional; se informado, exige idade mínima e data plausível. */
+/** Aniversário: exige idade mínima e data plausível (vazio fica para o `required`). */
 export function birthDateRule(control: AbstractControl<string>): ValidationErrors | null {
   const value = control.value;
   if (!value) return null;
@@ -59,7 +64,19 @@ export function birthDateRule(control: AbstractControl<string>): ValidationError
   return age >= MIN_SIGNUP_AGE ? null : { minAge: true };
 }
 
-/** Card "Criar conta" (apresentação): valida e emite os dados do cadastro. */
+export interface SignupSubmission {
+  data: SignupData;
+  photo: File | null;
+}
+
+type Step = 1 | 2;
+
+/**
+ * Card "Criar conta" em duas etapas no mesmo card (apresentação):
+ *  1. informações gerais + e-mail e senha;
+ *  2. foto de perfil (opcional), descrição breve e aceite dos termos.
+ * Valida cada etapa e emite os dados; quem chama a API é a página.
+ */
 @Component({
   selector: 'ok-signup-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -81,77 +98,168 @@ export function birthDateRule(control: AbstractControl<string>): ValidationError
 export class SignupForm {
   readonly pending = input(false);
   readonly errorMessage = input<string | null>(null);
-  readonly submitted = output<SignupData>();
-  /** Foto escolhida (prévia local; a página a aplica ao perfil após o cadastro). */
-  readonly photoChosen = output<string>();
+  readonly submitted = output<SignupSubmission>();
 
+  private readonly injector = inject(Injector);
+
+  protected readonly step = signal<Step>(1);
   protected readonly passwordVisible = signal(false);
+  protected readonly photo = signal<File | null>(null);
   protected readonly photoUrl = signal<string | null>(null);
+  protected readonly photoMessage = signal<string | null>(null);
   protected readonly minAge = MIN_SIGNUP_AGE;
+  protected readonly aboutMax = ABOUT_MAX_LENGTH;
   protected readonly today = new Date().toISOString().slice(0, 10);
+
   protected readonly genders: { value: Gender; label: string }[] = [
     { value: 'feminino', label: 'Feminino' },
     { value: 'masculino', label: 'Masculino' },
     { value: 'outro', label: 'Outro' },
     { value: 'nao-informar', label: 'Prefiro não informar' },
   ];
+  protected readonly relationships: { value: Relationship; label: string }[] = [
+    { value: 'solteiro', label: 'Solteiro(a)' },
+    { value: 'namorando', label: 'Namorando' },
+    { value: 'casado', label: 'Casado(a)' },
+    { value: 'relacionamento-aberto', label: 'Relacionamento aberto' },
+    { value: 'nao-informar', label: 'Prefiro não informar' },
+  ];
 
-  private readonly firstInput = viewChild.required<ElementRef<HTMLInputElement>>('firstInput');
+  private readonly firstInput = viewChild<ElementRef<HTMLInputElement>>('firstInput');
+  private readonly stepTwoTitle = viewChild<ElementRef<HTMLElement>>('stepTwoTitle');
   private readonly errorAlert = viewChild<ElementRef<HTMLElement>>('errorAlert');
 
-  protected readonly form = inject(NonNullableFormBuilder).group({
+  private readonly fb = inject(NonNullableFormBuilder);
+
+  protected readonly general = this.fb.group({
     firstName: ['', [Validators.required, Validators.maxLength(40)]],
     lastName: ['', [Validators.required, Validators.maxLength(40)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
     password: ['', [Validators.required, Validators.maxLength(128), passwordRule]],
-    birthDate: ['', birthDateRule],
-    gender: [''],
+    gender: this.fb.control<Gender | ''>('', Validators.required),
+    relationship: this.fb.control<Relationship | ''>('', Validators.required),
+    birthDate: ['', [Validators.required, birthDateRule]],
+    city: ['', [Validators.required, Validators.maxLength(80)]],
+  });
+
+  protected readonly details = this.fb.group({
+    about: ['', Validators.maxLength(ABOUT_MAX_LENGTH)],
     acceptTerms: [false, Validators.requiredTrue],
   });
 
   protected readonly strength = toSignal(
-    this.form.controls.password.valueChanges.pipe(map(passwordStrength)),
+    this.general.controls.password.valueChanges.pipe(map(passwordStrength)),
     { initialValue: passwordStrength('') },
+  );
+  protected readonly aboutLength = toSignal(
+    this.details.controls.about.valueChanges.pipe(map((value) => value.length)),
+    { initialValue: 0 },
   );
 
   constructor() {
     effect(() => {
-      if (this.pending()) this.form.disable({ emitEvent: false });
-      else this.form.enable({ emitEvent: false });
+      const method = this.pending() ? 'disable' : 'enable';
+      this.general[method]({ emitEvent: false });
+      this.details[method]({ emitEvent: false });
     });
 
     effect(() => {
       if (this.errorMessage()) this.errorAlert()?.nativeElement.focus();
     });
+
+    // E-mail já usado (409) pertence à etapa 1: volta para lá com o erro visível.
+    effect(() => {
+      const message = this.errorMessage();
+      if (message && /e-mail/i.test(message)) this.step.set(1);
+    });
+
+    inject(DestroyRef).onDestroy(() => this.revokePhotoUrl());
+  }
+
+  protected next(): void {
+    if (this.general.invalid) {
+      this.general.markAllAsTouched();
+      this.focusFirstInvalid();
+      return;
+    }
+    this.goTo(2);
+  }
+
+  protected back(): void {
+    this.goTo(1);
   }
 
   protected onPhoto(files: FileList | null): void {
     const file = files?.[0];
-    if (file && /^image\/(png|jpeg)$/.test(file.type) && file.size <= 5 * 1024 * 1024) {
-      const url = URL.createObjectURL(file);
-      this.photoUrl.set(url);
-      this.photoChosen.emit(url);
+    if (!file) return;
+
+    const error = photoError(file);
+    if (error) {
+      this.photoMessage.set(error);
+      return;
     }
+    this.revokePhotoUrl();
+    this.photo.set(file);
+    this.photoUrl.set(URL.createObjectURL(file));
+    this.photoMessage.set(null);
+  }
+
+  protected removePhoto(): void {
+    this.revokePhotoUrl();
+    this.photo.set(null);
+    this.photoUrl.set(null);
   }
 
   protected submit(): void {
     if (this.pending()) return;
+    if (this.step() === 1) return this.next();
 
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      if (this.form.controls.firstName.invalid) this.firstInput().nativeElement.focus();
+    if (this.details.invalid) {
+      this.details.markAllAsTouched();
       return;
     }
 
-    const value = this.form.getRawValue();
+    const general = this.general.getRawValue();
+    const details = this.details.getRawValue();
     this.submitted.emit({
-      firstName: value.firstName.trim(),
-      lastName: value.lastName.trim(),
-      email: value.email.trim(),
-      password: value.password,
-      birthDate: value.birthDate || null,
-      gender: (value.gender || null) as Gender | null,
-      acceptTerms: true,
+      data: {
+        firstName: general.firstName.trim(),
+        lastName: general.lastName.trim(),
+        email: general.email.trim(),
+        password: general.password,
+        birthDate: general.birthDate,
+        gender: general.gender as Gender,
+        relationship: general.relationship as Relationship,
+        city: general.city.trim(),
+        about: details.about.trim(),
+        acceptTerms: true,
+      },
+      photo: this.photo(),
     });
+  }
+
+  /** Troca de etapa e leva o foco ao início dela (leitores de tela anunciam). */
+  private goTo(step: Step): void {
+    this.step.set(step);
+    afterNextRender(
+      () => {
+        const target = step === 1 ? this.firstInput() : this.stepTwoTitle();
+        target?.nativeElement.focus();
+      },
+      { injector: this.injector },
+    );
+  }
+
+  private focusFirstInvalid(): void {
+    const host = this.firstInput()?.nativeElement.closest('form');
+    const invalid = host?.querySelector<HTMLElement>(
+      '.ng-invalid input, .ng-invalid mat-select, input.ng-invalid',
+    );
+    invalid?.focus();
+  }
+
+  private revokePhotoUrl(): void {
+    const url = this.photoUrl();
+    if (url) URL.revokeObjectURL(url);
   }
 }
