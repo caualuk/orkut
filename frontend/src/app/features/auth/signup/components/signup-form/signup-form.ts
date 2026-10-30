@@ -46,6 +46,15 @@ function passwordRule(control: AbstractControl<string>): ValidationErrors | null
     : { passwordRule: true };
 }
 
+/**
+ * Data local em `YYYY-MM-DD`. `toISOString()` usaria UTC e, à noite no Brasil,
+ * já devolveria o dia seguinte.
+ */
+export function localIsoDate(date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 /** Aniversário: exige idade mínima e data plausível (vazio fica para o `required`). */
 export function birthDateRule(control: AbstractControl<string>): ValidationErrors | null {
   const value = control.value;
@@ -109,7 +118,7 @@ export class SignupForm {
   protected readonly photoMessage = signal<string | null>(null);
   protected readonly minAge = MIN_SIGNUP_AGE;
   protected readonly aboutMax = ABOUT_MAX_LENGTH;
-  protected readonly today = new Date().toISOString().slice(0, 10);
+  protected readonly today = localIsoDate();
 
   protected readonly genders: { value: Gender; label: string }[] = [
     { value: 'feminino', label: 'Feminino' },

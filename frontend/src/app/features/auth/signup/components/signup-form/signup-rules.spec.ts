@@ -1,6 +1,6 @@
 import { FormControl } from '@angular/forms';
 import { passwordStrength } from './password-strength';
-import { birthDateRule } from './signup-form';
+import { birthDateRule, localIsoDate } from './signup-form';
 
 describe('passwordStrength', () => {
   it('vazia não pontua', () => {
@@ -22,8 +22,13 @@ describe('birthDateRule', () => {
   const yearsAgo = (years: number) => {
     const date = new Date();
     date.setFullYear(date.getFullYear() - years);
-    return date.toISOString().slice(0, 10);
+    return localIsoDate(date);
   };
+
+  it('usa a data local, não a UTC (às 23h de 29/10 ainda é dia 29)', () => {
+    expect(localIsoDate(new Date(2026, 9, 29, 23, 30))).toBe('2026-10-29');
+    expect(localIsoDate(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
 
   it('é opcional', () => {
     expect(check('')).toBeNull();
