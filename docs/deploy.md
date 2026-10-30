@@ -51,10 +51,11 @@ Depois de mudar variáveis, faça **Redeploy**: elas só valem para novos deploy
 curl https://<seu-dominio>/api/health     # {"status":"ok"} = API e banco respondendo
 ```
 
-| Sintoma                                       | Causa provável                                                |
-| --------------------------------------------- | ------------------------------------------------------------- |
-| `404 NOT_FOUND` da Vercel em todas as páginas | Root Directory errado ou deploy anterior a este `vercel.json` |
-| `/api/health` responde `503`                  | `DATABASE_URL`, senha ou TLS incorretos                       |
-| `FUNCTION_INVOCATION_FAILED` em `/api/*`      | Variável obrigatória ausente (veja os logs da função)         |
-| `403` ao entrar ou se cadastrar               | Domínio do site fora de `CORS_ORIGINS`                        |
-| `500` nas telas internas                      | Migrations não aplicadas (passo 1)                            |
+| Sintoma                                       | Causa provável                                                                                            |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `404 NOT_FOUND` da Vercel em todas as páginas | Root Directory errado ou deploy anterior a este `vercel.json`                                             |
+| `npm ci` falha pedindo `package-lock.json`    | Comando rodou fora de `backend/` ou `frontend/`; confira se o Install Command do painel está sem override |
+| `/api/health` responde `503`                  | `DATABASE_URL`, senha ou TLS incorretos                                                                   |
+| `FUNCTION_INVOCATION_FAILED` em `/api/*`      | Variável obrigatória ausente (veja os logs da função)                                                     |
+| `403` ao entrar ou se cadastrar               | Domínio do site fora de `CORS_ORIGINS`                                                                    |
+| `500` nas telas internas                      | Migrations não aplicadas (passo 1)                                                                        |
