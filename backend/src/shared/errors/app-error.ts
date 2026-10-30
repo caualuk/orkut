@@ -26,6 +26,11 @@ export class AppError extends Error {
     return new AppError(401, 'INVALID_CREDENTIALS', 'E-mail ou senha inválidos.');
   }
 
+  /** Senha de confirmação incorreta numa ação sensível (sessão já autenticada). */
+  static invalidPassword(): AppError {
+    return new AppError(403, 'INVALID_PASSWORD', 'Senha incorreta.');
+  }
+
   static forbidden(message = 'Acesso negado.'): AppError {
     return new AppError(403, 'FORBIDDEN', message);
   }

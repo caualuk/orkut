@@ -123,6 +123,60 @@ describe('Rotas /api/auth', () => {
       expect(res.status).toBe(204);
     });
   });
+
+  describe('DELETE /account', () => {
+    const deleteAccount = (cookie: string | undefined, body: unknown, origin = TEST_ORIGIN) => {
+      const req = request(ctx.app).delete('/api/auth/account').set('Origin', origin);
+      if (cookie) req.set('Cookie', cookie);
+      return req.send(body as object);
+    };
+
+    it('exclui a conta, limpa o cookie e invalida a sessão', async () => {
+      const cookie = sessionCookie(await postLogin(TEST_USER));
+
+      const res = await deleteAccount(cookie, { password: TEST_USER.password });
+
+      expect(res.status).toBe(204);
+      expect(sessionCookie(res)).toMatch(/orkut_sid=;/);
+      expect(await ctx.repository.findUserByEmail(TEST_USER.email)).toBeNull();
+
+      const me = await request(ctx.app).get('/api/auth/me').set('Cookie', cookie);
+      expect(me.status).toBe(401);
+      expect((await postLogin(TEST_USER)).status).toBe(401);
+    });
+
+    it('recusa senha incorreta sem excluir', async () => {
+      const cookie = sessionCookie(await postLogin(TEST_USER));
+
+      const res = await deleteAccount(cookie, { password: 'errada' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('INVALID_PASSWORD');
+      expect(await ctx.repository.findUserByEmail(TEST_USER.email)).not.toBeNull();
+    });
+
+    it('exige sessão', async () => {
+      const res = await deleteAccount(undefined, { password: TEST_USER.password });
+      expect(res.status).toBe(401);
+    });
+
+    it('exige a senha no corpo', async () => {
+      const cookie = sessionCookie(await postLogin(TEST_USER));
+      const res = await deleteAccount(cookie, {});
+      expect(res.status).toBe(400);
+    });
+
+    it('bloqueia origem não autorizada (CSRF)', async () => {
+      const cookie = sessionCookie(await postLogin(TEST_USER));
+      const res = await deleteAccount(
+        cookie,
+        { password: TEST_USER.password },
+        'https://evil.example.com',
+      );
+      expect(res.status).toBe(403);
+      expect(await ctx.repository.findUserByEmail(TEST_USER.email)).not.toBeNull();
+    });
+  });
 });
 
 describe('GET /api/health', () => {

@@ -75,4 +75,14 @@ export class InMemoryAuthRepository implements AuthRepository {
     const session = this.sessions.find((s) => s.tokenHash.equals(tokenHash));
     if (session) session.revokedAt = new Date();
   }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Espelha o `on delete cascade` do banco para as sessões.
+    this.users.delete(userId);
+    this.sessions.splice(
+      0,
+      this.sessions.length,
+      ...this.sessions.filter((s) => s.userId !== userId),
+    );
+  }
 }

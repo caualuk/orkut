@@ -105,6 +105,43 @@ describe('AuthService', () => {
     http.expectNone('/api/auth/me');
   });
 
+  it('exclui a conta com a senha no corpo e limpa o estado', async () => {
+    const login = firstValueFrom(
+      service.login({ email: USER.email, password: 'x', remember: false }),
+    );
+    http.expectOne('/api/auth/login').flush({ user: USER });
+    await login;
+
+    const result = firstValueFrom(service.deleteAccount('segredo'), { defaultValue: undefined });
+    const req = http.expectOne('/api/auth/account');
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.body).toEqual({ password: 'segredo' });
+    expect(req.request.withCredentials).toBe(true);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    await result;
+    expect(service.isAuthenticated()).toBe(false);
+  });
+
+  it('mantém a sessão se a exclusão da conta falhar', async () => {
+    const login = firstValueFrom(
+      service.login({ email: USER.email, password: 'x', remember: false }),
+    );
+    http.expectOne('/api/auth/login').flush({ user: USER });
+    await login;
+
+    const result = firstValueFrom(service.deleteAccount('errada'), { defaultValue: undefined });
+    http
+      .expectOne('/api/auth/account')
+      .flush(
+        { error: { code: 'INVALID_PASSWORD', message: 'Senha incorreta.' } },
+        { status: 403, statusText: 'Forbidden' },
+      );
+
+    await expect(result).rejects.toBeTruthy();
+    expect(service.user()).toEqual(USER);
+  });
+
   it('logout limpa o estado mesmo se a API falhar', async () => {
     const login = firstValueFrom(
       service.login({ email: USER.email, password: 'x', remember: false }),

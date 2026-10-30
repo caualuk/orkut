@@ -11,6 +11,7 @@ import {
   ConfirmDialog,
   type ConfirmDialogData,
 } from '../../shared/ui/confirm-dialog/confirm-dialog';
+import { DeleteAccountDialog } from './delete-account-dialog';
 
 type SectionId = 'geral' | 'privacidade' | 'notificacoes' | 'aparencia' | 'conta';
 type ToggleKey = 'showRecentVisitors' | 'allowTestimonials' | 'appearOnline';
@@ -111,6 +112,21 @@ export class SettingsPage {
         if (!confirmed) return;
         const done = () => void this.router.navigateByUrl('/login');
         this.auth.logout().subscribe({ complete: done, error: done });
+      });
+  }
+
+  protected deleteAccount(): void {
+    this.dialog
+      .open<DeleteAccountDialog, void, boolean>(DeleteAccountDialog, {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+      })
+      .afterClosed()
+      .subscribe((deleted) => {
+        if (!deleted) return;
+        // A conta não existe mais: descarta os dados locais e volta ao login.
+        this.store.reset();
+        void this.router.navigateByUrl('/login');
       });
   }
 }

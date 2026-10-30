@@ -17,6 +17,11 @@ export const loginSchema = z.object({
 
 export type LoginBody = z.infer<typeof loginSchema>;
 
+/** Confirmação da senha atual para excluir a conta. */
+export const deleteAccountSchema = z.object({ password: loginSchema.shape.password });
+
+export type DeleteAccountBody = z.infer<typeof deleteAccountSchema>;
+
 /** Idade mínima para criar conta (termos de uso). */
 export const MIN_SIGNUP_AGE = 13;
 

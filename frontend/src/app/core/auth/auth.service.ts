@@ -46,6 +46,13 @@ export class AuthService {
       .pipe(finalize(() => this.setUser(null)));
   }
 
+  /** Exclui a conta (confirmada pela senha atual); a API remove o cookie de sessão. */
+  deleteAccount(password: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/account`, { body: { password }, withCredentials: true })
+      .pipe(tap(() => this.setUser(null)));
+  }
+
   /**
    * Garante que o estado da sessão foi carregado (uma única chamada a /me,
    * compartilhada entre guards concorrentes). 401 significa "sem sessão".

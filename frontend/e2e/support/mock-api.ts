@@ -21,6 +21,7 @@ export async function mockAuthApi(page: Page, options: MockApiOptions = {}) {
     authenticated: options.authenticated ?? false,
     loginRequests: [] as unknown[],
     signupRequests: [] as unknown[],
+    accountDeleted: false,
   };
 
   const json = (route: Route, status: number, body: unknown) =>
@@ -79,6 +80,16 @@ export async function mockAuthApi(page: Page, options: MockApiOptions = {}) {
 
   await page.route('**/api/auth/logout', (route) => {
     state.authenticated = false;
+    return route.fulfill({ status: 204 });
+  });
+
+  await page.route('**/api/auth/account', (route) => {
+    const body = route.request().postDataJSON() as { password: string };
+    if (body.password !== VALID_PASSWORD) {
+      return json(route, 403, { error: { code: 'INVALID_PASSWORD', message: 'Senha incorreta.' } });
+    }
+    state.authenticated = false;
+    state.accountDeleted = true;
     return route.fulfill({ status: 204 });
   });
 

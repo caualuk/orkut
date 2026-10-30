@@ -184,6 +184,22 @@
           Desativar
         </button>
       </div>
+      <div class="danger mt-3">
+        <div class="flex-1">
+          <p class="font-bold text-danger">Excluir conta</p>
+          <p class="text-xs text-ink-secondary">
+            Apaga sua conta e todos os seus dados para sempre. Não dá para desfazer.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="ok-btn-primary !bg-danger !bg-none"
+          (click)="deleteAccount()"
+          data-testid="delete-account"
+        >
+          Excluir
+        </button>
+      </div>
     </section>
   </div>
 </div>

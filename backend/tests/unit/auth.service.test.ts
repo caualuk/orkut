@@ -120,6 +120,29 @@ describe('AuthService', () => {
     await expect(service.getUserFromSession(token)).resolves.toBeNull();
   });
 
+  describe('deleteAccount', () => {
+    it('exclui o usuário e todas as sessões com a senha correta', async () => {
+      const { token, user } = await login();
+      await login({ remember: true });
+
+      await service.deleteAccount(user, TEST_USER.password);
+
+      expect(repository.users.has(user.id)).toBe(false);
+      expect(repository.sessions).toHaveLength(0);
+      await expect(service.getUserFromSession(token)).resolves.toBeNull();
+    });
+
+    it('recusa senha incorreta com INVALID_PASSWORD e mantém a conta', async () => {
+      const { user } = await login();
+
+      await expect(service.deleteAccount(user, 'errada')).rejects.toMatchObject({
+        status: 403,
+        code: 'INVALID_PASSWORD',
+      });
+      expect(repository.users.has(user.id)).toBe(true);
+    });
+  });
+
   describe('signup', () => {
     const signupInput = {
       firstName: 'Nina',

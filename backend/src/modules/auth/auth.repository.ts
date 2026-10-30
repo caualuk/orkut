@@ -14,6 +14,8 @@ export interface AuthRepository {
   createSession(session: NewSession): Promise<void>;
   findUserBySessionHash(tokenHash: Buffer, now: Date): Promise<PublicUser | null>;
   revokeSession(tokenHash: Buffer): Promise<void>;
+  /** Remove o usuário; as chaves estrangeiras apagam todos os dados dele em cascata. */
+  deleteUser(userId: string): Promise<void>;
 }
 
 interface UserRow {
@@ -117,5 +119,9 @@ export class PgAuthRepository implements AuthRepository {
         where token_hash = $1 and revoked_at is null`,
       [tokenHash],
     );
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await this.db.query('delete from app.users where id = $1', [userId]);
   }
 }

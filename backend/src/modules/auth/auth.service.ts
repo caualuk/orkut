@@ -92,6 +92,21 @@ export class AuthService {
     await this.repository.revokeSession(hashSessionToken(token));
   }
 
+  /**
+   * Exclui a conta do usuário autenticado após confirmar a senha. A remoção em
+   * `app.users` apaga em cascata sessões, perfil, recados, fotos, comunidades…
+   */
+  async deleteAccount(user: PublicUser, password: string): Promise<void> {
+    const record = await this.repository.findUserByEmail(user.email);
+    if (!record || record.id !== user.id) throw AppError.unauthorized();
+
+    if (!(await this.hasher.verify(record.passwordHash, password))) {
+      throw AppError.invalidPassword();
+    }
+
+    await this.repository.deleteUser(record.id);
+  }
+
   private async startSession(
     user: UserRecord,
     persistent: boolean,

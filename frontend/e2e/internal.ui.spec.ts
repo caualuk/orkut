@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { mockAuthApi } from './support/mock-api';
+import { mockAuthApi, VALID_PASSWORD } from './support/mock-api';
 import { initialSocialState, mockSocialApi, PEOPLE } from './support/mock-social-api';
 
 /** Telas internas com sessão e API social simuladas (estado em memória, pessoas de teste). */
@@ -17,10 +17,11 @@ const SCREENS = [
   { path: '/comunidades', title: 'Comunidades · orkut' },
 ];
 
+let auth: Awaited<ReturnType<typeof mockAuthApi>>;
 let social: Awaited<ReturnType<typeof mockSocialApi>>;
 
 test.beforeEach(async ({ page }) => {
-  await mockAuthApi(page, { authenticated: true });
+  auth = await mockAuthApi(page, { authenticated: true });
   social = await mockSocialApi(page);
 });
 
@@ -161,6 +162,27 @@ test('Configurações: tema escuro aplica data-theme e é salvo na API', async (
 
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
+test('Configurações: excluir conta pede a senha e volta ao login', async ({ page }) => {
+  await page.goto('/configuracoes');
+  await page.getByTestId('delete-account').click();
+
+  const confirm = page.getByTestId('delete-account-confirm');
+  await expect(confirm).toBeDisabled();
+
+  await page.getByTestId('delete-account-password').fill('senha-errada');
+  await confirm.click();
+  await expect(page.getByTestId('delete-account-error')).toHaveText(/Senha incorreta\./);
+  expect(auth.accountDeleted).toBe(false);
+
+  await page.getByTestId('delete-account-password').fill(VALID_PASSWORD);
+  await confirm.click();
+  await expect(page).toHaveURL(/\/login$/);
+  expect(auth.accountDeleted).toBe(true);
+
+  await page.goto('/home');
+  await expect(page).toHaveURL(/\/login\?returnUrl=%2Fhome$/);
 });
 
 test('Amigos: busca amigos e pessoas reais para adicionar', async ({ page }) => {

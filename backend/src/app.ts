@@ -66,7 +66,7 @@ export function createApp(deps: AppDependencies): Express {
     cors({
       origin: config.corsOrigins,
       credentials: true,
-      methods: ['GET', 'POST'],
+      methods: ['GET', 'POST', 'DELETE'],
       allowedHeaders: ['Content-Type'],
       maxAge: 600,
     }),

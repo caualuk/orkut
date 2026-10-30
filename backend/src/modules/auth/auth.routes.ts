@@ -1,8 +1,16 @@
 import { Router, type RequestHandler } from 'express';
 import { validateBody } from '../../shared/http/validate.js';
 import { requireAuth } from './auth.middleware.js';
-import { loginSchema, signupSchema, type LoginBody, type SignupBody } from './auth.schemas.js';
+import {
+  deleteAccountSchema,
+  loginSchema,
+  signupSchema,
+  type DeleteAccountBody,
+  type LoginBody,
+  type SignupBody,
+} from './auth.schemas.js';
 import type { AuthService } from './auth.service.js';
+import type { PublicUser } from './auth.types.js';
 import type { SessionCookie } from './session-cookie.js';
 
 export interface AuthRouterDeps {
@@ -18,6 +26,7 @@ export interface AuthRouterDeps {
  *  POST /login  → cria sessão e define cookie HttpOnly
  *  POST /logout → revoga sessão e remove cookie
  *  GET  /me     → retorna o usuário da sessão atual
+ *  DELETE /account → confirma a senha, exclui a conta e todos os dados, remove cookie
  */
 export function createAuthRouter({
   service,
@@ -58,6 +67,20 @@ export function createAuthRouter({
   router.get('/me', requireAuth(service, cookie), (_req, res) => {
     res.json({ user: res.locals.user });
   });
+
+  // Mesmo limitador do login: senhas erradas contam contra força bruta com sessão roubada.
+  router.delete(
+    '/account',
+    loginRateLimiter,
+    requireAuth(service, cookie),
+    validateBody(deleteAccountSchema),
+    async (req, res) => {
+      const { password } = req.body as DeleteAccountBody;
+      await service.deleteAccount(res.locals.user as PublicUser, password);
+      cookie.clear(res);
+      res.status(204).end();
+    },
+  );
 
   return router;
 }

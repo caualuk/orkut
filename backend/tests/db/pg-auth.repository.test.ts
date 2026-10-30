@@ -14,6 +14,7 @@ const hasDatabase = Boolean(process.env.DATABASE_URL);
 const email = `teste+${Date.now()}@orkut.test`;
 const password = 'senha-de-teste-123';
 const signupEmail = `cadastro+${Date.now()}@orkut.test`;
+const deleteEmail = `excluir+${Date.now()}@orkut.test`;
 
 describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
   let db: Database;
@@ -34,7 +35,9 @@ describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
   });
 
   afterAll(async () => {
-    await db.query('delete from app.users where email = any($1)', [[email, signupEmail]]);
+    await db.query('delete from app.users where email = any($1)', [
+      [email, signupEmail, deleteEmail],
+    ]);
     await db.end();
   });
 
@@ -128,5 +131,32 @@ describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
     expect(rows[0]).toEqual({ birth: '1994-03-12', gender: 'masculino', terms: true });
 
     await expect(service.signup(input, ctx)).rejects.toMatchObject({ code: 'EMAIL_TAKEN' });
+  });
+
+  it('exclui a conta e apaga as sessões em cascata', async () => {
+    const { user, token } = await service.signup(
+      {
+        firstName: 'Excluir',
+        lastName: 'Teste',
+        email: deleteEmail,
+        password,
+        birthDate: null,
+        gender: null,
+      },
+      ctx,
+    );
+
+    await expect(service.deleteAccount(user, 'senha-errada-1')).rejects.toMatchObject({
+      code: 'INVALID_PASSWORD',
+    });
+    await service.deleteAccount(user, password);
+
+    const { rows } = await db.query<{ users: number; sessions: number }>(
+      `select (select count(*)::int from app.users where id = $1) as users,
+              (select count(*)::int from app.sessions where user_id = $1) as sessions`,
+      [user.id],
+    );
+    expect(rows[0]).toEqual({ users: 0, sessions: 0 });
+    await expect(service.getUserFromSession(token)).resolves.toBeNull();
   });
 });
