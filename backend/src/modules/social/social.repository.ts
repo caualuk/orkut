@@ -283,7 +283,11 @@ export class PgSocialRepository {
       `select ${person('u')}::jsonb || jsonb_build_object(
                 'bestFriend', exists (select 1 from app.best_friends b
                                        where b.user_id = $1 and b.friend_id = u.id),
-                'mutualFriends', app.mutual_friends($1, u.id)
+                'mutualFriends', app.mutual_friends($1, u.id),
+                -- Aniversário de hoje no fuso do Brasil (o mesmo do público do orkut).
+                'birthdayToday', u.birth_date is not null
+                  and to_char(u.birth_date, 'MM-DD')
+                    = to_char(now() at time zone 'America/Sao_Paulo', 'MM-DD')
               ) as item
          from app.friend_ids($1) fid
          join app.users u on u.id = fid
@@ -432,10 +436,12 @@ export class PgSocialRepository {
                 'recipient', ${person('r')},
                 'text', s.body,
                 'createdAt', s.created_at,
-                'read', s.recipient_id <> $1 or s.read_at is not null,
+                -- O que o próprio usuário escreveu (inclusive no próprio mural) conta como lido
+                -- e aparece em "Enviados".
+                'read', s.author_id = $1 or s.read_at is not null,
                 'liked', exists (select 1 from app.scrap_likes l where l.scrap_id = s.id and l.user_id = $1),
                 'likes', (select count(*)::int from app.scrap_likes l where l.scrap_id = s.id),
-                'direction', case when s.recipient_id = $1 then 'recebido' else 'enviado' end,
+                'direction', case when s.author_id = $1 then 'enviado' else 'recebido' end,
                 'replies', coalesce((select json_agg(rp.body order by rp.created_at)
                                        from app.scraps rp
                                       where rp.reply_to_id = s.id and rp.author_id = $1), '[]')

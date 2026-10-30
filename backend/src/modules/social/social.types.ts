@@ -77,6 +77,7 @@ export const DEFAULT_SETTINGS: SettingsDto = {
 export interface FriendDto extends PersonDto {
   bestFriend: boolean;
   mutualFriends: number;
+  birthdayToday: boolean;
 }
 
 export interface FriendRequestDto extends PersonDto {
