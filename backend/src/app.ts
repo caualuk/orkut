@@ -13,6 +13,7 @@ import type { PgSocialRepository } from './modules/social/social.repository.js';
 import { createSocialRouter } from './modules/social/social.routes.js';
 import { AppError } from './shared/errors/app-error.js';
 import { createErrorHandler, notFoundHandler } from './shared/http/error-handler.js';
+import { classifyHealthFailure } from './shared/http/health-failure.js';
 import { originGuard } from './shared/http/origin-guard.js';
 import type { Logger } from './shared/logger.js';
 
@@ -117,7 +118,7 @@ export function createApp(deps: AppDependencies): Express {
       res.json({ status: 'ok' });
     } catch (error) {
       logger.warn({ err: error }, 'Health check falhou');
-      res.status(503).json({ status: 'unavailable' });
+      res.status(503).json({ status: 'unavailable', reason: classifyHealthFailure(error) });
     }
   });
 
