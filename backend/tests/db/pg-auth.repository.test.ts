@@ -158,6 +158,9 @@ describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
         password,
         birthDate: null,
         gender: null,
+        relationship: 'nao-informar',
+        city: '',
+        about: '',
       },
       ctx,
     );
