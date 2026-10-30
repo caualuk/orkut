@@ -1,118 +1,195 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import type { SocialStateDto } from './social.api';
 import { SocialStore } from './social.store';
+
+const ME = '11111111-1111-4111-8111-111111111111';
+const ANA = '22222222-2222-4222-8222-222222222222';
+const now = new Date().toISOString();
+const person = (id: string, name: string) => ({ id, name, online: true, hasPhoto: false });
+
+/** Estado como a API devolve (pessoas de teste, nunca dados de exemplo da tela). */
+function state(overrides: Partial<SocialStateDto> = {}): SocialStateDto {
+  return {
+    profile: {
+      id: ME,
+      email: 'eu@orkut.test',
+      firstName: 'Eu',
+      lastName: 'Teste',
+      gender: 'nao-informar',
+      relationship: 'nao-informar',
+      birthday: null,
+      city: '',
+      country: '',
+      about: '',
+      interests: [],
+      social: {},
+      contact: {},
+      professional: {},
+      hasPhoto: false,
+      fans: 0,
+      memberSince: '2026-01-15T12:00:00.000Z',
+      visits: { total: 0, lastWeek: 0, yesterday: 0 },
+      recentVisitors: [],
+    },
+    settings: {
+      scrapVisibility: 'amigos',
+      showRecentVisitors: true,
+      allowTestimonials: true,
+      appearOnline: true,
+      theme: 'claro',
+      language: 'pt-BR',
+      notifications: { scraps: true, testimonials: true, friendRequests: true, birthdays: true },
+    },
+    friends: [
+      { ...person(ANA, 'Ana Teste'), bestFriend: false, mutualFriends: 0, birthdayToday: true },
+    ],
+    friendRequests: [],
+    suggestions: [],
+    scraps: [
+      {
+        id: 's1',
+        author: person(ANA, 'Ana Teste'),
+        recipient: person(ME, 'Eu Teste'),
+        text: 'Oi!',
+        createdAt: now,
+        read: false,
+        liked: false,
+        likes: 0,
+        direction: 'recebido',
+        replies: [],
+      },
+    ],
+    conversations: [
+      { person: person(ANA, 'Ana Teste'), unread: 2, lastActivity: now, messages: [] },
+    ],
+    testimonials: [],
+    albums: [
+      {
+        id: 'a1',
+        title: 'Viagem',
+        visibility: 'amigos',
+        photos: 3,
+        coverPhotoId: 'p1',
+      },
+    ],
+    photos: [],
+    feed: [],
+    communities: [],
+    ...overrides,
+  };
+}
 
 describe('SocialStore', () => {
   let store: SocialStore;
+  let http: HttpTestingController;
 
-  beforeEach(() => {
-    localStorage.clear();
+  const flushState = (dto: SocialStateDto = state()) =>
+    http.expectOne('/api/social/state').flush(dto);
+
+  beforeEach(async () => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     store = TestBed.inject(SocialStore);
+    http = TestBed.inject(HttpTestingController);
+
+    const loading = store.load();
+    flushState();
+    await loading;
   });
 
-  it('deriva contadores dos dados (recados não lidos, mensagens, fotos)', () => {
-    expect(store.unreadScraps()).toBe(2);
+  afterEach(() => http.verify());
+
+  it('mapeia o estado da API e deriva os contadores', () => {
+    expect(store.loaded()).toBe(true);
+    expect(store.displayName()).toBe('Eu Teste');
+    expect(store.profile().visits.since).toMatch(/jan/);
+    expect(store.friends()[0]).toMatchObject({ name: 'Ana Teste', initials: 'AT', online: true });
+    expect(store.unreadScraps()).toBe(1);
     expect(store.unreadMessages()).toBe(2);
-    expect(store.totalPhotos()).toBe(40);
+    expect(store.totalPhotos()).toBe(3);
+    expect(store.albums()[0]?.coverUrl).toBe('/api/social/photos/p1');
   });
 
-  it('envia recado (ignora texto vazio) e o lista como enviado', () => {
+  it('recado: mostra na hora, envia à API e recarrega o estado', async () => {
     store.sendScrap('   ');
-    const before = store.scraps().length;
+    http.expectNone('/api/social/scraps');
 
-    const nina = store.friendById('nina');
-    store.sendScrap('  Oi, Nina!  ', nina);
+    store.sendScrap('  Oi, Ana!  ', store.friends()[0]);
+    expect(store.scraps()[0]).toMatchObject({ text: 'Oi, Ana!', direction: 'enviado' });
 
-    expect(store.scraps()).toHaveLength(before + 1);
-    expect(store.scraps()[0]).toMatchObject({
-      text: 'Oi, Nina!',
-      direction: 'enviado',
-      toName: 'Nina Costa',
+    const post = http.expectOne('/api/social/scraps');
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ to: ANA, text: 'Oi, Ana!' });
+    post.flush(null, { status: 204, statusText: 'No Content' });
+    await Promise.resolve();
+    await Promise.resolve();
+    flushState();
+  });
+
+  it('curtir é otimista e não recarrega o estado', async () => {
+    store.toggleScrapLike('s1');
+    expect(store.scraps()[0]).toMatchObject({ liked: true, likes: 1 });
+    http.expectOne('/api/social/scraps/s1/like').flush(null, { status: 204, statusText: '' });
+    await Promise.resolve();
+    http.expectNone('/api/social/state');
+  });
+
+  it('se a API recusar, guarda a mensagem e volta ao estado do servidor', async () => {
+    store.sendScrap('Oi', store.friends()[0]);
+    http
+      .expectOne('/api/social/scraps')
+      .flush(
+        { error: { code: 'FORBIDDEN', message: 'Ação disponível apenas entre amigos.' } },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(store.lastError()).toBe('Ação disponível apenas entre amigos.');
+    flushState();
+    await Promise.resolve();
+    expect(store.scraps().some((s) => s.text === 'Oi')).toBe(false);
+  });
+
+  it('comentário no feed entra marcado como novo (para animar)', () => {
+    const loading = store.load();
+    flushState(
+      state({
+        feed: [
+          {
+            id: `status:${ANA}`,
+            kind: 'status',
+            actor: person(ANA, 'Ana Teste'),
+            createdAt: now,
+            status: 'Partiu praia!',
+            likes: 0,
+            liked: false,
+            comments: 0,
+            commentList: [],
+          },
+        ],
+      }),
+    );
+    return loading.then(async () => {
+      store.commentOnFeed(`status:${ANA}`, 'Boa viagem!');
+      const [item] = store.feed();
+      expect(item).toMatchObject({ comments: 1 });
+      expect(item?.commentList[0]).toMatchObject({ text: 'Boa viagem!', fresh: true });
+      http
+        .expectOne('/api/social/feed/comment')
+        .flush(null, { status: 204, statusText: 'No Content' });
+      await Promise.resolve();
+      await Promise.resolve();
+      flushState();
     });
   });
 
-  it('curtir alterna o estado e o contador', () => {
-    const [first] = store.receivedScraps();
-    store.toggleScrapLike(first!.id);
-    expect(store.scraps().find((s) => s.id === first!.id)).toMatchObject({ liked: true, likes: 4 });
-    store.toggleScrapLike(first!.id);
-    expect(store.scraps().find((s) => s.id === first!.id)).toMatchObject({
-      liked: false,
-      likes: 3,
-    });
-  });
-
-  it('responder marca o recado como lido', () => {
-    const unread = store.receivedScraps().find((s) => !s.read)!;
-    store.replyToScrap(unread.id, 'Bora!');
-    expect(store.scraps().find((s) => s.id === unread.id)).toMatchObject({
-      read: true,
-      replies: ['Bora!'],
-    });
-  });
-
-  it('aceitar pedido de amizade adiciona o amigo e remove o pedido', () => {
-    const friends = store.friends().length;
-    store.acceptFriendRequest('req-lucas-braga');
-    expect(store.friendRequests()).toHaveLength(0);
-    expect(store.friends()).toHaveLength(friends + 1);
-    expect(store.friends()[0]?.name).toBe('Lucas Braga');
-  });
-
-  it('abrir conversa zera os não lidos e enviar mensagem a adiciona ao fim', () => {
-    store.openConversation('jean');
-    expect(store.conversationById('jean')?.unread).toBe(0);
-
-    store.sendMessage('jean', 'Valeu!');
-    expect(store.conversationById('jean')?.messages.at(-1)).toMatchObject({
-      fromMe: true,
-      text: 'Valeu!',
-    });
-  });
-
-  it('aprovar depoimento pendente o move para recebidos', () => {
-    store.approveTestimonial('t-pending');
-    expect(store.pendingTestimonials()).toHaveLength(0);
-    expect(store.testimonials().find((t) => t.id === 't-pending')?.status).toBe('recebido');
-  });
-
-  it('vota uma única vez por enquete', () => {
-    const id = 'eu-odeio-acordar-cedo';
-    store.vote(id, 'pl1', 0);
-    store.vote(id, 'pl1', 1);
-    const poll = store.communityById(id)!.polls[0]!;
-    expect(poll.votedIndex).toBe(0);
-    expect(poll.options.map((o) => o.votes)).toEqual([813, 1204, 2310]);
-  });
-
-  it('cria tópico abaixo dos fixos', () => {
-    store.createTopic('eu-odeio-acordar-cedo', 'Novo tópico');
-    const topics = store.communityById('eu-odeio-acordar-cedo')!.topics;
-    expect(topics[0]?.pinned).toBe(true);
-    expect(topics[1]?.title).toBe('Novo tópico');
-  });
-
-  it('aceita só fotos JPG/PNG de até 5 MB', () => {
-    const ok = new File(['x'], 'praia.png', { type: 'image/png' });
-    const gif = new File(['x'], 'anim.gif', { type: 'image/gif' });
-    expect(store.addPhotos([ok, gif])).toBe(1);
-    expect(store.photos()[0]?.alt).toBe('praia.png');
-  });
-
-  it('nome editado no perfil substitui o da sessão', () => {
-    expect(store.displayName()).toBe('Paulo Higa');
-    store.updateProfile({ firstName: 'Paulinho', lastName: 'Higa' });
-    expect(store.displayName()).toBe('Paulinho Higa');
-    expect(store.firstName()).toBe('Paulinho');
-  });
-
-  it('só grava preferências no navegador quando o usuário as altera', () => {
-    expect(localStorage.getItem('orkut.settings')).toBeNull();
-    store.updateSettings({ theme: 'escuro' });
-    expect(JSON.parse(localStorage.getItem('orkut.settings')!).theme).toBe('escuro');
+  it('reset descarta os dados ao sair da conta', () => {
+    store.reset();
+    expect(store.friends()).toEqual([]);
+    expect(store.profile().id).toBe('');
+    expect(store.loaded()).toBe(false);
   });
 });
