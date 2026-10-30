@@ -282,6 +282,38 @@ test('Comunidades: o dono exclui depois de confirmar no modal', async ({ page })
   await expect(page.getByRole('link', { name: /Vai ser excluída/ })).toHaveCount(0);
 });
 
+test('Música do perfil: a sincronização e a navegação não reiniciam o vídeo', async ({ page }) => {
+  let videoLoads = 0;
+  await page.route('https://www.youtube-nocookie.com/**', (route) => {
+    videoLoads += 1;
+    return route.fulfill({ status: 200, contentType: 'text/html', body: '<title>video</title>' });
+  });
+  const state = initialSocialState();
+  Object.assign(state.profile, { personal: { musicId: 'dQw4w9WgXcQ', musicTitle: 'Anna Júlia' } });
+  social = await mockSocialApi(page, state);
+  await page.clock.install();
+  await page.goto('/home');
+
+  await page.getByTestId('music-toggle').click();
+  await page.getByTestId('music-save').click();
+  await expect(page.getByTestId('music-player').locator('iframe')).toBeVisible();
+  await expect.poll(() => videoLoads).toBe(1);
+
+  const stateReads = () => social.requests.filter((r) => r.path === '/state').length;
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    const before = stateReads();
+    await page.clock.fastForward(21_000);
+    await expect.poll(stateReads).toBeGreaterThan(before);
+  }
+
+  // O relógio simulado congela o requestAnimationFrame da transição de rota.
+  await page.clock.resume();
+  await page.locator('a[href="/recados"]:visible').first().click();
+  await expect(page).toHaveURL(/\/recados$/);
+  await expect(page.getByTestId('music-player')).toBeVisible();
+  expect(videoLoads).toBe(1);
+});
+
 test('Música do perfil: o ♪ abre o modal, salva, toca e remove', async ({ page }) => {
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body: '<title>video</title>' }),

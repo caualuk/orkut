@@ -110,11 +110,21 @@ export class MusicPlayer {
   protected readonly store = inject(SocialStore);
   private readonly sanitizer = inject(DomSanitizer);
 
-  /** Só o id validado entra na URL, então a confiança no recurso é segura. */
-  protected readonly embedUrl = computed(() => {
+  private readonly videoId = computed(() => {
     const videoId = this.store.profile().music?.videoId;
-    if (!videoId || !isYouTubeId(videoId)) return null;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(youTubeEmbedUrl(videoId));
+    return videoId && isYouTubeId(videoId) ? videoId : null;
+  });
+
+  /**
+   * Depende só do id: cada sincronização cria um perfil novo, e uma URL nova
+   * recarregaria o iframe, voltando o vídeo ao início. Só o id validado entra
+   * na URL, então a confiança no recurso é segura.
+   */
+  protected readonly embedUrl = computed(() => {
+    const videoId = this.videoId();
+    return videoId
+      ? this.sanitizer.bypassSecurityTrustResourceUrl(youTubeEmbedUrl(videoId))
+      : null;
   });
 
   constructor() {

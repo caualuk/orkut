@@ -51,6 +51,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Corrigido
 
+- Música do perfil não volta mais ao início: a sincronização recarregava o vídeo a cada 20 s
+  e a cada ação salva.
 - Ícones de Editar perfil e demais telas não ficam mais cortados.
 - Menu do perfil volta a mostrar o ícone de usuário em **Perfil**.
 - Tema escuro: a luz branca do canto inferior esquerdo agora é rosa, como a do canto superior.
