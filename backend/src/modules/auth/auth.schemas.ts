@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RELATIONSHIPS } from '../social/social.types.js';
 
 export const loginSchema = z.object({
   email: z
@@ -64,6 +65,23 @@ export const signupSchema = z.object({
     .enum(['feminino', 'masculino', 'outro', 'nao-informar'], { error: 'Opção inválida.' })
     .nullish()
     .transform((value) => value ?? null),
+  relationship: z
+    .enum(RELATIONSHIPS, { error: 'Opção inválida.' })
+    .nullish()
+    .transform((value) => value ?? 'nao-informar'),
+  city: z
+    .string()
+    .trim()
+    .max(80, 'Cidade muito longa.')
+    .nullish()
+    .transform((value) => value ?? ''),
+  // Descrição breve da etapa 2 (vira o "Quem sou eu" do perfil).
+  about: z
+    .string()
+    .trim()
+    .max(500, 'Descrição muito longa (máx. 500).')
+    .nullish()
+    .transform((value) => value ?? ''),
   acceptTerms: z.literal(true, { error: 'É preciso aceitar os Termos de uso.' }),
 });
 

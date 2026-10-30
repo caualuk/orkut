@@ -37,11 +37,11 @@ export function createAuthRouter({
   const router = Router();
 
   router.post('/signup', signupRateLimiter, validateBody(signupSchema), async (req, res) => {
-    const { firstName, lastName, email, password, birthDate, gender } = req.body as SignupBody;
-    const result = await service.signup(
-      { firstName, lastName, email, password, birthDate, gender },
-      { ipAddress: req.ip ?? null, userAgent: req.get('user-agent') ?? null },
-    );
+    // O schema já exigiu acceptTerms = true; o serviço só usa os dados do usuário.
+    const result = await service.signup(req.body as SignupBody, {
+      ipAddress: req.ip ?? null,
+      userAgent: req.get('user-agent') ?? null,
+    });
 
     cookie.write(res, result.token, result.expiresAt, result.persistent);
     res.status(201).json({ user: result.user });

@@ -1,3 +1,5 @@
+import type { RELATIONSHIPS } from '../social/social.types.js';
+
 export interface UserRecord {
   id: string;
   email: string;
@@ -30,12 +32,20 @@ export interface LoginInput {
 
 export type Gender = 'feminino' | 'masculino' | 'outro' | 'nao-informar';
 
+export type Relationship = (typeof RELATIONSHIPS)[number];
+
+/** Usuário + linha inicial de `app.profiles`, gravados juntos no cadastro. */
 export interface NewUser {
   email: string;
   displayName: string;
   passwordHash: string;
   birthDate: string | null;
   gender: Gender | null;
+  firstName: string;
+  lastName: string;
+  relationship: Relationship;
+  city: string;
+  about: string;
 }
 
 export interface SignupInput {
@@ -45,6 +55,9 @@ export interface SignupInput {
   password: string;
   birthDate: string | null;
   gender: Gender | null;
+  relationship: Relationship;
+  city: string;
+  about: string;
 }
 
 export interface RequestContext {

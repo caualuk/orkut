@@ -55,12 +55,30 @@ export class PgAuthRepository implements AuthRepository {
   async createUser(user: NewUser): Promise<UserRecord | null> {
     // `on conflict do nothing` evita corrida entre dois cadastros com o mesmo e-mail.
     const { rows } = await this.db.query<UserRow>(
-      `insert into app.users
-              (email, display_name, password_hash, birth_date, gender, terms_accepted_at)
-       values ($1, $2, $3, $4, $5, now())
-       on conflict (email) do nothing
-       returning id, email, display_name, password_hash, failed_login_attempts, locked_until`,
-      [user.email, user.displayName, user.passwordHash, user.birthDate, user.gender],
+      `with created as (
+         insert into app.users
+                (email, display_name, password_hash, birth_date, gender, terms_accepted_at)
+         values ($1, $2, $3, $4, $5, now())
+         on conflict (email) do nothing
+         returning id, email, display_name, password_hash, failed_login_attempts, locked_until
+       ), profile as (
+         -- Mesmo comando = mesma transação: não existe usuário sem perfil.
+         insert into app.profiles (user_id, first_name, last_name, relationship, city, about)
+         select id, $6, $7, $8, $9, $10 from created
+       )
+       select * from created`,
+      [
+        user.email,
+        user.displayName,
+        user.passwordHash,
+        user.birthDate,
+        user.gender,
+        user.firstName,
+        user.lastName,
+        user.relationship,
+        user.city,
+        user.about,
+      ],
     );
     return rows[0] ? toUserRecord(rows[0]) : null;
   }

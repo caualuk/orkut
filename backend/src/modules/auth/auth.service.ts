@@ -76,6 +76,11 @@ export class AuthService {
       passwordHash: await this.hasher.hash(input.password),
       birthDate: input.birthDate,
       gender: input.gender,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      relationship: input.relationship,
+      city: input.city,
+      about: input.about,
     });
 
     if (!user) throw AppError.emailTaken();
