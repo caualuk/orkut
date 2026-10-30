@@ -95,6 +95,13 @@ export function createSocialRouter({ repository, requireAuth }: SocialRouterDeps
     await repository.removeProfilePhoto(me(res));
     done(res);
   });
+  router.get('/users/:id/profile', async (req, res) => {
+    const id = param(req, 'id');
+    const profile = await repository.getPublicProfile(me(res), id);
+    if (!profile) throw AppError.notFound('Perfil não encontrado.');
+    await repository.recordVisit(me(res), id);
+    res.json(profile);
+  });
   router.get('/users/:id/photo', async (req, res) => {
     sendImage(res, await repository.getProfilePhoto(param(req, 'id')));
   });

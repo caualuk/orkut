@@ -323,6 +323,87 @@
     color: var(--color-ink-muted);
   }
 
+  select.ok-input {
+    appearance: none;
+    padding-right: 44px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e91e63' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      border-color 150ms var(--ease-emphasized),
+      box-shadow 150ms var(--ease-emphasized);
+  }
+
+  select.ok-input:hover {
+    border-color: var(--color-primary);
+  }
+
+  /* Lista aberta com a cara do app onde o navegador permite (Chrome, Edge). */
+  @supports (appearance: base-select) {
+    select.ok-input,
+    select.ok-input::picker(select) {
+      appearance: base-select;
+    }
+
+    select.ok-input::picker-icon {
+      display: none;
+    }
+
+    select.ok-input::picker(select) {
+      margin-top: 6px;
+      max-height: 280px;
+      padding: 6px;
+      border: 0;
+      border-radius: 16px;
+      background: var(--color-surface);
+      box-shadow: 0 14px 34px rgb(28 27 31 / 24%);
+    }
+
+    select.ok-input option {
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      color: var(--color-ink);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    select.ok-input option:hover,
+    select.ok-input option:focus-visible {
+      background: var(--color-surface-variant);
+      outline: none;
+    }
+
+    select.ok-input option:checked {
+      background: rgb(233 30 99 / 12%);
+      color: var(--color-primary-strong);
+      font-weight: 700;
+    }
+
+    select.ok-input option::checkmark {
+      display: none;
+    }
+  }
+
+  /*
+   * Coluna que acompanha a rolagem. Se for mais alta que a tela, rola por dentro;
+   * a margem negativa com padding evita que essa rolagem corte as sombras.
+   */
+  .ok-sticky-column {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+    max-height: calc(100dvh - 104px);
+    margin: -8px;
+    padding: 8px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
   .ok-label {
     display: block;
     margin-bottom: 6px;

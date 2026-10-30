@@ -90,11 +90,12 @@ export class MusicToggle {
   private readonly store = inject(SocialStore);
   private readonly dialog = inject(MatDialog);
 
-  protected readonly playing = inject(MusicPlayerState).playing;
+  private readonly player = inject(MusicPlayerState);
+  protected readonly playing = this.player.playing;
   protected readonly tooltip = computed(() => {
-    const music = this.store.profile().music;
-    if (!music) return 'Escolher a música do perfil';
-    return this.playing() ? `Tocando: ${music.title}` : music.title;
+    const track = this.player.track();
+    if (track) return `Tocando: ${track.title}`;
+    return this.store.profile().music?.title ?? 'Escolher a música do perfil';
   });
 
   protected open(): void {

@@ -48,7 +48,7 @@ export function injectShellRouteData() {
  */
 export function isNavItemActive(item: NavItem, url: string): boolean {
   const path = url.split(/[?#]/)[0] ?? '';
-  if (item.label === 'Perfil' && item.link === '/home') {
+  if (item.label === 'Perfil' && item.exact) {
     return path === '/home' || path.startsWith('/perfil');
   }
   if (item.exact) return path === item.link;

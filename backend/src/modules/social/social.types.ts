@@ -26,6 +26,27 @@ export interface PersonDto {
   hasPhoto: boolean;
 }
 
+export type ProfileRelation = 'me' | 'friend' | 'sent' | 'received' | 'none';
+
+/**
+ * O que qualquer membro vê no perfil de outro. Lista fechada: e-mail, nascimento,
+ * contato e dados profissionais ficam só em `ProfileDto`, do próprio usuário.
+ */
+export interface PublicProfileDto extends PersonDto {
+  city: string;
+  country: string;
+  about: string;
+  interests: string[];
+  memberSince: string;
+  fans: number;
+  friendCount: number;
+  mutualFriends: number;
+  relation: ProfileRelation;
+  music: { videoId: string; title: string } | null;
+  friends: PersonDto[];
+  communities: CommunitySummaryDto[];
+}
+
 export interface ProfileDto {
   id: string;
   email: string;

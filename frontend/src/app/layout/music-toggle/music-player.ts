@@ -10,35 +10,59 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { isYouTubeId, youTubeEmbedUrl } from '../../core/social/profile-music';
-import { SocialStore } from '../../core/social/social.store';
 
-/** Se a música do perfil está tocando (compartilhado entre o botão ♪ e o player). */
+export interface MusicTrack {
+  videoId: string;
+  title: string;
+  /** Dono do perfil visitado; sem ele, é a música do próprio usuário. */
+  owner?: string;
+}
+
+/** O que está tocando (compartilhado entre o botão ♪, os perfis e o player). */
 @Injectable({ providedIn: 'root' })
 export class MusicPlayerState {
-  readonly playing = signal(false);
+  readonly track = signal<MusicTrack | null>(null);
+  readonly playing = computed(() => this.track() !== null);
+
+  play(track: MusicTrack): void {
+    this.track.set(track);
+  }
+
+  stop(): void {
+    this.track.set(null);
+  }
+
+  /** Ao sair de um perfil, a música dele para; a do próprio usuário continua. */
+  stopVisited(): void {
+    if (this.track()?.owner) this.track.set(null);
+  }
 }
 
 /**
  * Mini player da música do perfil. Só existe enquanto toca: o vídeo nunca
- * carrega sem o clique em "Salvar e tocar", e fica visível como o YouTube exige.
+ * carrega sem o clique em "Salvar e tocar" ou a visita a um perfil com música, e
+ * fica visível como o YouTube exige.
  */
 @Component({
   selector: 'ok-music-player',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatIconModule],
   template: `
-    @if (state.playing() && embedUrl(); as url) {
+    @if (embedUrl(); as url) {
       <aside class="player" aria-label="Música do perfil" data-testid="music-player">
         <div class="flex items-center gap-2 px-3 py-2">
           <mat-icon aria-hidden="true" fontIcon="music_note" class="!size-4 !text-base text-primary" />
           <p class="min-w-0 flex-1 truncate text-xs font-bold text-ink">
-            {{ store.profile().music?.title }}
+            {{ state.track()?.title }}
+            @if (state.track()?.owner; as owner) {
+              <span class="font-normal text-ink-muted">· perfil de {{ owner }}</span>
+            }
           </p>
           <button
             type="button"
             class="close"
             aria-label="Fechar música do perfil"
-            (click)="state.playing.set(false)"
+            (click)="state.stop()"
             data-testid="music-close"
           >
             <mat-icon aria-hidden="true" fontIcon="close" class="!size-4 !text-base" />
@@ -47,7 +71,7 @@ export class MusicPlayerState {
         <iframe
           class="video"
           [src]="url"
-          [title]="store.profile().music?.title ?? 'Música do perfil'"
+          [title]="state.track()?.title ?? 'Música do perfil'"
           allow="autoplay; encrypted-media; picture-in-picture"
           allowfullscreen
           referrerpolicy="strict-origin-when-cross-origin"
@@ -107,18 +131,17 @@ export class MusicPlayerState {
 })
 export class MusicPlayer {
   protected readonly state = inject(MusicPlayerState);
-  protected readonly store = inject(SocialStore);
   private readonly sanitizer = inject(DomSanitizer);
 
   private readonly videoId = computed(() => {
-    const videoId = this.store.profile().music?.videoId;
+    const videoId = this.state.track()?.videoId;
     return videoId && isYouTubeId(videoId) ? videoId : null;
   });
 
   /**
-   * Depende só do id: cada sincronização cria um perfil novo, e uma URL nova
-   * recarregaria o iframe, voltando o vídeo ao início. Só o id validado entra
-   * na URL, então a confiança no recurso é segura.
+   * Depende só do id: uma URL nova recarrega o iframe e volta o vídeo ao início,
+   * então trocar o título ou o dono da faixa não pode gerar outra. Só o id
+   * validado entra na URL, então a confiança no recurso é segura.
    */
   protected readonly embedUrl = computed(() => {
     const videoId = this.videoId();
@@ -128,6 +151,6 @@ export class MusicPlayer {
   });
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.state.playing.set(false));
+    inject(DestroyRef).onDestroy(() => this.state.stop());
   }
 }

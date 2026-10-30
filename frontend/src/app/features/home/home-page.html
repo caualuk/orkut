@@ -93,17 +93,22 @@
       </div>
       <ul class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
         @for (friend of store.onlineFriends(); track friend.id) {
-          <li class="flex shrink-0 flex-col items-center gap-1.5">
-            <span class="rounded-full p-[3px] ring-[3px] ring-primary">
-              <ok-avatar
-                [tone]="friend.tone"
-                [src]="friend.photoUrl"
-                [initials]="friend.initials"
-                [size]="58"
-                [label]="friend.name"
-              />
-            </span>
-            <span class="text-xs text-ink-secondary">{{ friend.shortName }}</span>
+          <li>
+            <a
+              [routerLink]="['/perfil', friend.id]"
+              class="flex shrink-0 flex-col items-center gap-1.5"
+            >
+              <span class="rounded-full p-[3px] ring-[3px] ring-primary">
+                <ok-avatar
+                  [tone]="friend.tone"
+                  [src]="friend.photoUrl"
+                  [initials]="friend.initials"
+                  [size]="58"
+                  [label]="friend.name"
+                />
+              </span>
+              <span class="text-xs text-ink-secondary">{{ friend.shortName }}</span>
+            </a>
           </li>
         } @empty {
           <li class="py-2 text-sm text-ink-muted">Nenhum amigo online agora.</li>
@@ -221,7 +226,7 @@
   </div>
 
   <!-- Coluna social -->
-  <div class="hidden min-w-0 flex-col gap-4 tab:flex">
+  <div class="ok-sticky-column hidden min-w-0 flex-col gap-4 tab:flex" data-testid="home-social">
     <section class="ok-card ok-enter p-5" style="--i: 1" aria-labelledby="friends-title">
       <div class="mb-4 flex items-center justify-between">
         <h2 id="friends-title" class="text-lg font-bold text-ink">
@@ -247,7 +252,7 @@
       <ul class="grid grid-cols-3 gap-x-3 gap-y-4">
         @for (friend of visibleFriends(); track friend.id; let i = $index) {
           <li [class.max-lg:hidden]="i >= 6">
-            <a routerLink="/amigos" [queryParams]="{ busca: friend.name }" class="tile">
+            <a [routerLink]="['/perfil', friend.id]" class="tile">
               <ok-avatar
                 [fluid]="true"
                 [tone]="friend.tone"

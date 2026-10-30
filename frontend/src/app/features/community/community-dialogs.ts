@@ -3,34 +3,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { COMMUNITY_ICONS } from '../../core/social/social.models';
+import { COMMUNITY_CATEGORIES } from '../../core/social/social.models';
 import { SocialStore } from '../../core/social/social.store';
 import {
   FormDialog,
   type FormDialogData,
   type FormDialogResult,
 } from '../../shared/ui/form-dialog/form-dialog';
-
-const ICON_LABELS: Record<(typeof COMMUNITY_ICONS)[number], string> = {
-  groups: 'Pessoas',
-  music_note: 'Música',
-  local_cafe: 'Café',
-  sports_esports: 'Games',
-  movie: 'Filmes',
-  menu_book: 'Livros',
-  pets: 'Bichos',
-  sports_soccer: 'Esportes',
-  travel_explore: 'Viagens',
-  school: 'Escola',
-  code: 'Tecnologia',
-  restaurant: 'Comida',
-  wb_sunny: 'Sol',
-  bedtime: 'Sono',
-  favorite: 'Amor',
-  palette: 'Arte',
-  photo_camera: 'Fotografia',
-  theater_comedy: 'Humor',
-};
 
 const DIALOG_SIZE = { width: '520px', maxWidth: 'calc(100vw - 32px)' };
 
@@ -64,26 +43,20 @@ export function injectCommunityDialogs() {
           {
             key: 'category',
             label: 'Categoria',
-            type: 'text',
+            type: 'select',
             required: true,
-            maxLength: 40,
-            placeholder: 'Ex.: Humor, Música, Games',
+            options: COMMUNITY_CATEGORIES.map(({ label }) => ({ value: label, label })),
           },
           { key: 'about', label: 'Sobre', type: 'textarea', maxLength: 1000 },
-          {
-            key: 'icon',
-            label: 'Ícone',
-            type: 'select',
-            options: COMMUNITY_ICONS.map((icon) => ({ value: icon, label: ICON_LABELS[icon] })),
-          },
         ],
       });
       if (!result) return;
+      const category = COMMUNITY_CATEGORIES.find((c) => c.label === result['category']);
       const slug = await store.createCommunity({
         name: result['name'] ?? '',
-        category: result['category'] ?? '',
+        category: category?.label ?? 'Outros',
         about: result['about'] ?? '',
-        icon: result['icon'] ?? 'groups',
+        icon: category?.icon ?? 'groups',
       });
       if (!slug) return;
       const file = photo();

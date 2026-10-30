@@ -52,7 +52,12 @@
           <div class="flex items-center gap-3">
             <ok-avatar [tone]="item.tone" [src]="item.photoUrl" [size]="44" />
             <div class="min-w-0">
-              <p class="text-sm font-bold text-ink">{{ item.actorName }} {{ item.headline }}</p>
+              <p class="text-sm font-bold text-ink">
+                <a [routerLink]="['/perfil', item.actorId]" class="hover:underline">{{
+                  item.actorName
+                }}</a>
+                {{ item.headline }}
+              </p>
               <p class="text-xs text-ink-muted">{{ item.time }} · {{ item.source }}</p>
             </div>
           </div>

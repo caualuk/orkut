@@ -151,6 +151,34 @@ export async function mockSocialApi(page: Page, state: SocialState = initialSoci
   const noContent = (route: Route) => route.fulfill({ status: 204 });
   const me = () =>
     person({ id: ME_ID, name: `${state.profile.firstName} ${state.profile.lastName}` });
+  const publicProfile = (id: string) => {
+    const found = id === ME_ID ? me() : Object.values(PEOPLE).find((p) => p.id === id);
+    if (!found) return null;
+    const friends = state.friends as { id: string }[];
+    const relation =
+      id === ME_ID
+        ? 'me'
+        : friends.some((f) => f.id === id)
+          ? 'friend'
+          : state.friendRequests.some((r) => r.id === id)
+            ? 'received'
+            : 'none';
+    return {
+      ...person(found),
+      city: 'Recife',
+      country: 'Brasil',
+      about: `Sobre ${found.name}`,
+      interests: ['Música'],
+      memberSince: '2026-01-10T12:00:00.000Z',
+      fans: 2,
+      friendCount: 1,
+      mutualFriends: 1,
+      relation,
+      music: id === PEOPLE.ana.id ? { videoId: 'dQw4w9WgXcQ', title: 'Anna Júlia' } : null,
+      friends: [person(PEOPLE.bruno)],
+      communities: [],
+    };
+  };
   const detail = (record: CommunityRecord) => ({
     ...record.summary,
     about: 'Comunidade criada no teste',
@@ -176,6 +204,12 @@ export async function mockSocialApi(page: Page, state: SocialState = initialSoci
     let match: RegExpMatchArray | null;
 
     if (method === 'GET' && path === '/state') return json(route, state);
+    if (method === 'GET' && (match = path.match(/^\/users\/([^/]+)\/profile$/))) {
+      const profile = publicProfile(match[1]!);
+      return profile
+        ? json(route, profile)
+        : json(route, { error: { code: 'NOT_FOUND', message: 'Perfil não encontrado.' } }, 404);
+    }
     if (method === 'GET' && /^\/communities\/[^/]+\/photo$/.test(path)) {
       return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG });
     }

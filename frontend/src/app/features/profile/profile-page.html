@@ -1,0 +1,247 @@
+@if (profile(); as profile) {
+  <div class="grid gap-4 tab:gap-6 lg:grid-cols-[minmax(0,1fr)_312px]">
+    <div class="flex min-w-0 flex-col gap-4 tab:gap-5">
+      <!-- Capa -->
+      <section class="ok-card ok-enter overflow-hidden" aria-labelledby="profile-name">
+        <div class="cover" aria-hidden="true">
+          <span class="ring"></span>
+          <span class="ok-sphere-pink absolute -top-12 -right-10 size-44 tab:size-56"></span>
+          <span class="ok-sphere-pearl absolute right-[38%] bottom-6 size-10"></span>
+        </div>
+        <div class="relative flex flex-wrap items-end gap-4 px-4 pb-5 tab:px-6">
+          <span class="badge">
+            <ok-avatar
+              [tone]="profile.tone"
+              [src]="profile.photoUrl"
+              [initials]="profile.initials"
+              shape="tile"
+              [fluid]="true"
+              [size]="88"
+            />
+          </span>
+          <div class="min-w-0 flex-1 basis-48 pt-2">
+            <h1 id="profile-name" class="text-xl font-bold text-ink tab:text-2xl">
+              {{ profile.name }}
+            </h1>
+            <p class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-ink-muted">
+              @if (profile.online) {
+                <span class="inline-flex items-center gap-1 text-success">
+                  <span class="size-2 rounded-full bg-success" aria-hidden="true"></span>online
+                </span>
+                <span aria-hidden="true">·</span>
+              }
+              @if (profile.location) {
+                <span>{{ profile.location }}</span>
+                <span aria-hidden="true">·</span>
+              }
+              <span>no orkut desde {{ profile.memberSince }}</span>
+            </p>
+          </div>
+
+          <div class="flex w-full flex-wrap gap-2 tab:w-auto">
+            @switch (profile.relation) {
+              @case ('me') {
+                <a routerLink="/perfil/editar" class="ok-btn-outline" data-testid="profile-edit">
+                  <mat-icon aria-hidden="true" fontIcon="edit" class="!size-4 !text-base" />
+                  Editar perfil
+                </a>
+              }
+              @case ('friend') {
+                <a
+                  routerLink="/recados"
+                  [queryParams]="{ para: profile.id }"
+                  class="ok-btn-primary"
+                  data-testid="profile-scrap"
+                >
+                  <mat-icon aria-hidden="true" fontIcon="mail" class="!size-4 !text-base" />
+                  Deixar scrap
+                </a>
+              }
+              @case ('received') {
+                <button
+                  type="button"
+                  class="ok-btn-primary"
+                  (click)="accept(profile)"
+                  data-testid="profile-accept"
+                >
+                  Aceitar pedido
+                </button>
+              }
+              @case ('sent') {
+                <button
+                  type="button"
+                  class="ok-btn-outline"
+                  (click)="cancelRequest(profile)"
+                  data-testid="profile-cancel"
+                >
+                  Pedido enviado
+                </button>
+              }
+              @default {
+                <button
+                  type="button"
+                  class="ok-btn-primary"
+                  (click)="addFriend(profile)"
+                  data-testid="profile-add"
+                >
+                  + Adicionar
+                </button>
+              }
+            }
+          </div>
+        </div>
+
+        <dl class="grid grid-cols-3 gap-2 border-t border-divider px-4 py-3 text-center tab:px-6">
+          <div>
+            <dd class="text-lg font-bold text-ink">{{ profile.friendCount }}</dd>
+            <dt class="text-xs text-ink-muted">amigos</dt>
+          </div>
+          <div>
+            <dd class="text-lg font-bold text-ink">{{ profile.fans }}</dd>
+            <dt class="text-xs text-ink-muted">fãs</dt>
+          </div>
+          <div>
+            <dd class="text-lg font-bold text-ink">{{ profile.mutualFriends }}</dd>
+            <dt class="text-xs text-ink-muted">em comum</dt>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Música -->
+      @if (profile.music; as music) {
+        <section
+          class="ok-card ok-enter flex items-center gap-3 p-4 tab:p-5"
+          style="--i: 1"
+          aria-label="Música do perfil"
+          data-testid="profile-music"
+        >
+          <span class="music-icon" aria-hidden="true">
+            <mat-icon fontIcon="music_note" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs text-ink-muted">Música do perfil</p>
+            <p class="truncate font-bold text-ink">{{ music.title }}</p>
+          </div>
+          @if (profile.relation === 'me') {
+            <button type="button" class="ok-btn-tonal" (click)="chooseMusic()">Trocar</button>
+          }
+          <button
+            type="button"
+            class="ok-btn-primary"
+            [attr.aria-pressed]="playingHere()"
+            (click)="toggleMusic(profile)"
+            data-testid="profile-music-toggle"
+          >
+            <mat-icon
+              aria-hidden="true"
+              [fontIcon]="playingHere() ? 'stop' : 'play_arrow'"
+              class="!size-5 !text-xl"
+            />
+            {{ playingHere() ? 'Parar' : 'Ouvir' }}
+          </button>
+        </section>
+      } @else if (profile.relation === 'me') {
+        <section class="ok-card ok-enter flex items-center gap-3 p-4 tab:p-5" style="--i: 1">
+          <span class="music-icon" aria-hidden="true">
+            <mat-icon fontIcon="music_note" />
+          </span>
+          <p class="min-w-0 flex-1 text-sm text-ink-secondary">
+            Escolha uma música: ela toca para quem entrar no seu perfil.
+          </p>
+          <button
+            type="button"
+            class="ok-btn-primary"
+            (click)="chooseMusic()"
+            data-testid="profile-music-choose"
+          >
+            Escolher
+          </button>
+        </section>
+      }
+
+      <!-- Quem sou eu -->
+      <section class="ok-card ok-enter p-5 tab:p-6" style="--i: 2" aria-labelledby="about-title">
+        <h2 id="about-title" class="mb-3 text-lg font-bold text-ink">Quem sou eu</h2>
+        <p class="text-sm leading-relaxed whitespace-pre-line text-ink-secondary">
+          {{ profile.about || 'Ainda não escreveu nada por aqui.' }}
+        </p>
+        @if (profile.interests.length) {
+          <ul class="mt-4 flex flex-wrap gap-2" aria-label="Interesses">
+            @for (interest of profile.interests; track interest) {
+              <li class="rounded-full bg-surface-variant px-3 py-1 text-xs text-ink-secondary">
+                {{ interest }}
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    <!-- Coluna social -->
+    <div class="flex min-w-0 flex-col gap-4">
+      <section class="ok-card ok-enter p-5" style="--i: 3" aria-labelledby="friends-title">
+        <h2 id="friends-title" class="mb-4 text-lg font-bold text-ink">
+          Amigos ({{ profile.friendCount }})
+        </h2>
+        <ul class="grid grid-cols-3 gap-x-3 gap-y-4">
+          @for (friend of profile.friends; track friend.id) {
+            <li>
+              <a [routerLink]="['/perfil', friend.id]" class="block" data-testid="friend-link">
+                <ok-avatar
+                  [fluid]="true"
+                  [tone]="friend.tone"
+                  [src]="friend.photoUrl"
+                  [initials]="friend.initials"
+                  shape="tile"
+                  [size]="80"
+                />
+                <span class="mt-1.5 block truncate text-xs text-ink-secondary">
+                  {{ friend.shortName }}
+                </span>
+              </a>
+            </li>
+          } @empty {
+            <li class="col-span-3 text-sm text-ink-muted">Nenhum amigo por aqui ainda.</li>
+          }
+        </ul>
+      </section>
+
+      <section class="ok-card ok-enter p-5" style="--i: 4" aria-labelledby="communities-title">
+        <h2 id="communities-title" class="mb-4 text-lg font-bold text-ink">Comunidades</h2>
+        <ul class="flex flex-col gap-3">
+          @for (community of profile.communities; track community.id) {
+            <li>
+              <a
+                [routerLink]="['/comunidades', community.id]"
+                class="flex items-center gap-3 rounded-2xl bg-surface-variant p-2.5"
+              >
+                <ok-avatar
+                  [tone]="community.tone"
+                  [src]="community.photoUrl"
+                  shape="tile"
+                  [size]="44"
+                />
+                <span class="flex min-w-0 flex-col">
+                  <span class="truncate text-sm font-bold text-ink">{{ community.name }}</span>
+                  <span class="text-[11px] text-ink-muted">{{ community.members }} membros</span>
+                </span>
+              </a>
+            </li>
+          } @empty {
+            <li class="text-sm text-ink-muted">Ainda não participa de comunidades.</li>
+          }
+        </ul>
+      </section>
+    </div>
+  </div>
+} @else if (loading()) {
+  <p class="ok-card p-10 text-center text-sm text-ink-muted" role="status">Carregando…</p>
+} @else {
+  <section class="ok-card p-10 text-center">
+    <h1 class="text-xl font-bold text-ink">Perfil não encontrado</h1>
+    <p class="mt-2 text-sm text-ink-secondary">
+      A conta pode ter sido excluída ou o endereço está incorreto.
+    </p>
+    <a routerLink="/amigos" class="ok-btn-primary mt-6">Encontrar pessoas</a>
+  </section>
+}

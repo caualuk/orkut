@@ -13,6 +13,8 @@ function fakeRepository() {
     updateProfile: vi.fn(async () => {}),
     setProfilePhoto: vi.fn(async () => {}),
     getProfilePhoto: vi.fn(async () => null),
+    getPublicProfile: vi.fn(async () => null as unknown),
+    recordVisit: vi.fn(async () => {}),
     getSettings: vi.fn(async () => ({
       scrapVisibility: 'amigos',
       showRecentVisitors: true,
@@ -121,6 +123,25 @@ describe('Rotas /api/social', () => {
         notifications: expect.objectContaining({ scraps: false, testimonials: true }),
       }),
     );
+  });
+
+  it('perfil de outro membro: conta a visita só quando ele existe', async () => {
+    const url = `/api/social/users/${FRIEND}/profile`;
+    const missing = await request(ctx.app).get(url).set('Cookie', cookie);
+    expect(missing.status).toBe(404);
+    expect(repo.recordVisit).not.toHaveBeenCalled();
+
+    repo.getPublicProfile.mockResolvedValueOnce({ id: FRIEND, name: 'Ana' });
+    const found = await request(ctx.app).get(url).set('Cookie', cookie);
+    expect(found.status).toBe(200);
+    expect(found.body).toEqual({ id: FRIEND, name: 'Ana' });
+    expect(repo.recordVisit).toHaveBeenCalledWith(expect.any(String), FRIEND);
+
+    const invalid = await request(ctx.app)
+      .get('/api/social/users/1%27or%271/profile')
+      .set('Cookie', cookie);
+    expect(invalid.status).toBe(404);
+    expect(repo.getPublicProfile).toHaveBeenCalledTimes(2);
   });
 
   it('foto: aceita PNG verdadeiro e recusa arquivos disfarçados', async () => {

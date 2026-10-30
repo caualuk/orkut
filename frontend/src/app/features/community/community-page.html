@@ -1,111 +1,117 @@
 @if (community(); as community) {
   <div class="grid gap-4 tab:gap-6 lg:grid-cols-[minmax(0,1fr)_312px]">
-    <div class="flex min-w-0 flex-col gap-4 tab:gap-5">
-      <!-- Capa -->
-      <section class="ok-card ok-enter overflow-hidden" aria-labelledby="community-name">
-        <div class="cover" aria-hidden="true">
-          <span class="ring"></span>
-          <span class="ok-sphere-pink absolute -top-12 -right-10 size-44 tab:size-56"></span>
-          <span class="ok-sphere-pearl absolute right-[38%] bottom-6 size-10"></span>
-        </div>
-        <div class="relative flex flex-wrap items-end gap-4 px-4 pb-5 tab:px-6">
-          <span class="badge">
-            <ok-avatar
-              [tone]="community.tone"
-              [src]="community.photoUrl"
-              shape="tile"
-              [fluid]="true"
-              [size]="88"
-            />
-            @if (!community.photoUrl) {
-              <mat-icon aria-hidden="true" [fontIcon]="community.icon" class="badge-icon" />
-            }
-            @if (community.isOwner) {
-              <label class="photo-btn" [class.is-busy]="uploading()">
-                <input
-                  type="file"
-                  class="sr-only"
-                  accept="image/png,image/jpeg"
-                  [disabled]="uploading()"
-                  (change)="onPhoto($any($event.target).files); $any($event.target).value = ''"
-                  data-testid="community-photo-input"
-                />
-                <span class="sr-only">
-                  {{ community.photoUrl ? 'Trocar foto da comunidade' : 'Adicionar foto da comunidade' }}
-                </span>
-                <mat-icon aria-hidden="true" fontIcon="photo_camera" class="!size-4 !text-base" />
-              </label>
-              @if (community.photoUrl) {
-                <button
-                  type="button"
-                  class="photo-btn photo-btn--remove"
-                  aria-label="Remover foto da comunidade"
-                  [disabled]="uploading()"
-                  (click)="removePhoto()"
-                  data-testid="community-photo-remove"
-                >
-                  <mat-icon aria-hidden="true" fontIcon="close" class="!size-4 !text-base" />
-                </button>
-              }
-            }
-          </span>
-          <div class="min-w-0 flex-1 pt-2">
-            <h1 id="community-name" class="text-2xl font-bold text-ink">{{ community.name }}</h1>
-            <p class="text-sm text-ink-muted">
-              {{ community.category }} · {{ community.members }} membros ·
-              {{ community.visibility }}
-            </p>
-          </div>
-          <div class="flex w-full gap-2 tab:w-auto">
-            <button
-              type="button"
-              class="ok-btn-primary flex-1"
-              [class.!bg-none]="!community.joined"
-              [class.!bg-ink]="!community.joined"
-              [attr.aria-pressed]="community.joined"
-              (click)="toggleMembership()"
-              data-testid="toggle-membership"
-            >
-              @if (community.joined) {
-                <mat-icon aria-hidden="true" fontIcon="check" class="!size-4 !text-base" />
-                Participando
-              } @else {
-                + Participar
-              }
-            </button>
-            <button
-              type="button"
-              class="ok-btn-outline"
-              (click)="dialogs.createCommunity()"
-              data-testid="create-community"
-            >
-              <mat-icon aria-hidden="true" fontIcon="add" class="!size-4 !text-base" />
-              <span class="max-tab:sr-only">Criar comunidade</span>
-            </button>
-            @if (community.isOwner) {
+    <!-- Capa -->
+    <section
+      class="ok-card ok-enter overflow-hidden lg:col-span-2"
+      aria-labelledby="community-name"
+    >
+      <div class="cover" aria-hidden="true">
+        <span class="ring"></span>
+        <span class="ok-sphere-pink absolute -top-12 -right-10 size-44 tab:size-56"></span>
+        <span class="ok-sphere-pearl absolute right-[38%] bottom-6 size-10"></span>
+      </div>
+      <div class="relative flex flex-wrap items-end gap-4 px-4 pb-5 tab:px-6">
+        <span class="badge">
+          <ok-avatar
+            [tone]="community.tone"
+            [src]="community.photoUrl"
+            shape="tile"
+            [fluid]="true"
+            [size]="88"
+          />
+          @if (!community.photoUrl) {
+            <mat-icon aria-hidden="true" [fontIcon]="community.icon" class="badge-icon" />
+          }
+          @if (community.isOwner) {
+            <label class="photo-btn" [class.is-busy]="uploading()">
+              <input
+                type="file"
+                class="sr-only"
+                accept="image/png,image/jpeg"
+                [disabled]="uploading()"
+                (change)="onPhoto($any($event.target).files); $any($event.target).value = ''"
+                data-testid="community-photo-input"
+              />
+              <span class="sr-only">
+                {{
+                  community.photoUrl ? 'Trocar foto da comunidade' : 'Adicionar foto da comunidade'
+                }}
+              </span>
+              <mat-icon aria-hidden="true" fontIcon="photo_camera" class="!size-4 !text-base" />
+            </label>
+            @if (community.photoUrl) {
               <button
                 type="button"
-                class="ok-btn-outline !px-3 !text-danger"
-                aria-label="Excluir comunidade"
-                matTooltip="Excluir comunidade"
-                (click)="deleteCommunity()"
-                data-testid="delete-community"
+                class="photo-btn photo-btn--remove"
+                aria-label="Remover foto da comunidade"
+                [disabled]="uploading()"
+                (click)="removePhoto()"
+                data-testid="community-photo-remove"
               >
-                <mat-icon aria-hidden="true" fontIcon="delete" />
+                <mat-icon aria-hidden="true" fontIcon="close" class="!size-4 !text-base" />
               </button>
             }
+          }
+        </span>
+        <div class="min-w-0 flex-1 basis-60 pt-2">
+          <h1 id="community-name" class="text-2xl font-bold text-ink">{{ community.name }}</h1>
+          <p class="text-sm text-ink-muted" data-testid="community-meta">
+            {{ community.category }} · {{ community.members }}
+            {{ community.memberCount === 1 ? 'membro' : 'membros' }} ·
+            {{ community.visibility }}
+          </p>
+        </div>
+        <div class="flex w-full gap-2 tab:w-auto" data-testid="community-actions">
+          <button
+            type="button"
+            class="ok-btn-primary flex-1"
+            [class.!bg-none]="!community.joined"
+            [class.!bg-ink]="!community.joined"
+            [attr.aria-pressed]="community.joined"
+            (click)="toggleMembership()"
+            data-testid="toggle-membership"
+          >
+            @if (community.joined) {
+              <mat-icon aria-hidden="true" fontIcon="check" class="!size-4 !text-base" />
+              Participando
+            } @else {
+              + Participar
+            }
+          </button>
+          <button
+            type="button"
+            class="ok-btn-outline"
+            (click)="dialogs.createCommunity()"
+            data-testid="create-community"
+          >
+            <mat-icon aria-hidden="true" fontIcon="add" class="!size-4 !text-base" />
+            <span class="max-tab:sr-only">Criar comunidade</span>
+          </button>
+          @if (community.isOwner) {
             <button
               type="button"
-              class="ok-btn-outline !px-3 tab:hidden"
-              aria-label="Compartilhar comunidade"
-              (click)="share()"
+              class="ok-btn-outline !px-3 !text-danger"
+              aria-label="Excluir comunidade"
+              matTooltip="Excluir comunidade"
+              (click)="deleteCommunity()"
+              data-testid="delete-community"
             >
-              <mat-icon aria-hidden="true" fontIcon="share" />
+              <mat-icon aria-hidden="true" fontIcon="delete" />
             </button>
-          </div>
+          }
+          <button
+            type="button"
+            class="ok-btn-outline !px-3 tab:hidden"
+            aria-label="Compartilhar comunidade"
+            (click)="share()"
+          >
+            <mat-icon aria-hidden="true" fontIcon="share" />
+          </button>
         </div>
-      </section>
+      </div>
+    </section>
 
+    <div class="flex min-w-0 flex-col gap-4 tab:gap-5">
       <div class="ok-tabs" role="tablist" aria-label="Seções da comunidade">
         @for (item of tabs; track item.id) {
           <button
@@ -265,14 +271,19 @@
             </p>
             <ul class="grid grid-cols-3 gap-4 tab:grid-cols-4">
               @for (friend of memberFriends(); track friend.id) {
-                <li class="flex flex-col items-center gap-1.5 text-center">
-                  <ok-avatar
-                    [tone]="friend.tone"
-                    [initials]="friend.initials"
-                    shape="tile"
-                    [size]="64"
-                  />
-                  <span class="text-xs text-ink-secondary">{{ friend.name }}</span>
+                <li>
+                  <a
+                    [routerLink]="['/perfil', friend.id]"
+                    class="flex flex-col items-center gap-1.5 text-center"
+                  >
+                    <ok-avatar
+                      [tone]="friend.tone"
+                      [initials]="friend.initials"
+                      shape="tile"
+                      [size]="64"
+                    />
+                    <span class="text-xs text-ink-secondary">{{ friend.name }}</span>
+                  </a>
                 </li>
               } @empty {
                 <li class="col-span-full text-sm text-ink-muted">

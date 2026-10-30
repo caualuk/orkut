@@ -81,7 +81,7 @@
 
         <div class="flex-1"></div>
 
-        <ok-global-search class="hidden w-[300px] tab:block" />
+        <ok-global-search class="hidden w-[300px] min-w-0 shrink tab:block" />
         <button
           type="button"
           class="icon-btn icon-btn--filled tab:!hidden"
@@ -126,7 +126,11 @@
     <div
       class="mx-auto w-full max-w-[1296px] px-4 pt-4 pb-28 tab:px-6 tab:pt-6 tab:pb-10 lg:grid lg:grid-cols-[264px_minmax(0,1fr)] lg:gap-6 lg:pt-8"
     >
-      <aside class="hidden flex-col gap-4 lg:flex" aria-label="Seu perfil e atalhos">
+      <aside
+        class="ok-sticky-column hidden flex-col gap-4 lg:flex"
+        aria-label="Seu perfil e atalhos"
+        data-testid="side-menu"
+      >
         <ok-profile-card />
         <div class="ok-card p-2.5">
           <ok-profile-menu />

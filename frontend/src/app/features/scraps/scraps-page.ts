@@ -14,6 +14,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { VISIBILITY_LABELS, type Scrap } from '../../core/social/social.models';
 import { SocialStore } from '../../core/social/social.store';
 import { Avatar, TONE_GRADIENTS } from '../../shared/ui/avatar/avatar';
@@ -29,7 +30,7 @@ const MAX_LENGTH = 1000;
 @Component({
   selector: 'ok-scraps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Avatar, LikeButton, MatIconModule, MatTooltipModule, PageHeader],
+  imports: [Avatar, LikeButton, MatIconModule, MatTooltipModule, PageHeader, RouterLink],
   templateUrl: './scraps-page.html',
   styleUrl: './scraps-page.css',
 })

@@ -1,0 +1,55 @@
+:host {
+  display: block;
+}
+
+.cover {
+  position: relative;
+  height: 110px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2b2930 0%, #1c1b1f 100%);
+}
+
+@media (min-width: 37.5rem) {
+  .cover {
+    height: 150px;
+  }
+}
+
+.ring {
+  position: absolute;
+  left: 40px;
+  top: 30px;
+  width: 70px;
+  height: 70px;
+  border-radius: 999px;
+  border: 8px solid #3a3840;
+}
+
+.badge {
+  position: relative;
+  display: grid;
+  width: 76px;
+  margin-top: -44px;
+  place-items: center;
+  border-radius: 26px;
+  border: 5px solid var(--color-surface);
+  box-shadow: 0 14px 28px rgb(28 27 31 / 18%);
+}
+
+@media (min-width: 37.5rem) {
+  .badge {
+    width: 104px;
+    margin-top: -60px;
+  }
+}
+
+.music-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--color-surface-variant);
+  color: var(--color-primary-strong);
+}

@@ -7,6 +7,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Adicionado
 
+- **Perfil dos membros** (`/perfil/:id`, e `/perfil` para o próprio): foto, sobre, interesses,
+  amigos, comunidades e a **música do dono, que começa ao entrar** e para ao sair. Amigos,
+  feed, recados e membros de comunidade levam até lá. Só dados públicos saem da API.
+- **Visitas ao perfil** agora contam, e os contadores e "visitantes recentes" da Home saem do
+  zero.
 - **Excluir comunidade**: o dono apaga a comunidade depois de confirmar em um modal; tópicos,
   enquetes, eventos, membros, foto e itens do feed vão junto.
 - **Foto da comunidade**: já pode ser escolhida no formulário de criação; depois, o dono
@@ -38,6 +43,12 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Alterado
 
+- **Criar comunidade**: categoria virou uma lista fixa, que também define o ícone; o select
+  de ícone saiu.
+- **Selects** com seta própria e lista estilizada nos navegadores que permitem.
+- **Página da comunidade**: a capa ocupa a largura toda, e os botões do dono não cobrem mais
+  o nome e os membros.
+- **Menu lateral e colunas de amigos e comunidades do Início** ficam fixos durante a rolagem.
 - **Cadastro em 2 etapas no mesmo card**: (1) nome, sobrenome, sexo, relacionamento,
   aniversário, cidade, e-mail e senha; (2) foto de perfil e descrição breve + termos.
 - `POST /api/auth/signup` aceita `relationship`, `city` e `about` e cria a linha de

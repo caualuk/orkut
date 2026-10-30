@@ -52,13 +52,25 @@ export const routes: Routes = [
         title: 'Início · orkut',
         loadComponent: () => import('./features/home/home-page').then((m) => m.HomePage),
       },
-      { path: 'perfil', pathMatch: 'full', redirectTo: 'home' },
+      {
+        path: 'perfil',
+        pathMatch: 'full',
+        title: 'Perfil · orkut',
+        data: { heading: 'Perfil' } satisfies ShellRouteData,
+        loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
+      },
       {
         path: 'perfil/editar',
         title: 'Editar perfil · orkut',
         data: { heading: 'Editar perfil', back: true } satisfies ShellRouteData,
         loadComponent: () =>
           import('./features/profile/edit-profile-page').then((m) => m.EditProfilePage),
+      },
+      {
+        path: 'perfil/:userId',
+        title: 'Perfil · orkut',
+        data: { heading: 'Perfil', back: true } satisfies ShellRouteData,
+        loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
       },
       {
         path: 'recados',

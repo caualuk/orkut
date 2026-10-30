@@ -18,6 +18,7 @@ import {
   type SuggestionDto,
   type TestimonialDto,
   type Visibility,
+  PublicProfileDto,
 } from './social.types.js';
 
 export interface ProfileChanges {
@@ -48,6 +49,14 @@ const MAX_SCRAPS = 100;
 const MAX_CONVERSATIONS = 30;
 const MAX_MESSAGES = 100;
 const MAX_FEED = 40;
+
+const YOUTUBE_ID = /^[\w-]{11}$/;
+
+interface PublicProfileRow {
+  item: Omit<PublicProfileDto, 'music'>;
+  musicId: string | null;
+  musicTitle: string | null;
+}
 
 /**
  * Persistência da rede social em PostgreSQL. Todas as queries são
@@ -230,6 +239,82 @@ export class PgSocialRepository {
   }
 
   // ── Preferências ──────────────────────────────────────────────────────────
+
+  /** Perfil visto por outro membro (ou por ele mesmo, com `relation: 'me'`). */
+  async getPublicProfile(viewerId: string, userId: string): Promise<PublicProfileDto | null> {
+    const { rows } = await this.db.query<PublicProfileRow>(
+      `select ${person('u')}::jsonb || jsonb_build_object(
+                'city', coalesce(p.city, ''),
+                'country', coalesce(p.country, ''),
+                'about', coalesce(p.about, ''),
+                'interests', coalesce(to_jsonb(p.interests), '[]'::jsonb),
+                'memberSince', u.created_at,
+                'fans', (select count(*)::int from app.fans f where f.user_id = u.id),
+                'friendCount', (select count(*)::int from app.friend_ids(u.id)),
+                'mutualFriends', app.mutual_friends($1, u.id),
+                'relation', case
+                  when u.id = $1 then 'me'
+                  when app.are_friends($1, u.id) then 'friend'
+                  when exists (select 1 from app.friendships f
+                                where f.requester_id = $1 and f.addressee_id = u.id
+                                  and f.accepted_at is null) then 'sent'
+                  when exists (select 1 from app.friendships f
+                                where f.requester_id = u.id and f.addressee_id = $1
+                                  and f.accepted_at is null) then 'received'
+                  else 'none' end,
+                'friends', coalesce((
+                  select jsonb_agg(item) from (
+                    select ${person('fu')}::jsonb as item
+                      from app.users fu
+                     where fu.id in (select app.friend_ids(u.id))
+                     order by fu.display_name
+                     limit 9
+                  ) friends
+                ), '[]'::jsonb),
+                'communities', coalesce((
+                  select jsonb_agg(item) from (
+                    select jsonb_build_object(
+                             'id', c.id, 'slug', c.slug, 'name', c.name, 'icon', c.icon,
+                             'category', c.category, 'visibility', c.visibility,
+                             'hasPhoto', ${communityHasPhoto('c')},
+                             'members', (select count(*)::int from app.community_members cm
+                                          where cm.community_id = c.id),
+                             'joined', exists (select 1 from app.community_members cm
+                                                where cm.community_id = c.id and cm.user_id = $1)
+                           ) as item
+                      from app.community_members m
+                      join app.communities c on c.id = m.community_id
+                     where m.user_id = u.id
+                     order by m.joined_at desc
+                     limit 6
+                  ) communities
+                ), '[]'::jsonb)
+              ) as item,
+              p.personal ->> 'musicId' as "musicId",
+              p.personal ->> 'musicTitle' as "musicTitle"
+         from app.users u
+         left join app.profiles p on p.user_id = u.id
+        where u.id = $2`,
+      [viewerId, userId],
+    );
+    const row = rows[0];
+    if (!row) return null;
+    // O id vem de texto livre do dono do perfil e vai parar no player de quem visita.
+    const music =
+      row.musicId && YOUTUBE_ID.test(row.musicId)
+        ? { videoId: row.musicId, title: row.musicTitle ?? '' }
+        : null;
+    return { ...row.item, music };
+  }
+
+  async recordVisit(visitorId: string, visitedId: string): Promise<void> {
+    if (visitorId === visitedId) return;
+    await this.db.query(
+      `insert into app.profile_visits (visitor_id, visited_id) values ($1, $2)
+       on conflict (visitor_id, visited_id) do update set visited_at = now()`,
+      [visitorId, visitedId],
+    );
+  }
 
   async getSettings(userId: string): Promise<SettingsDto> {
     const { rows } = await this.db.query<{ settings: Partial<SettingsDto> }>(

@@ -151,7 +151,13 @@
               />
               <p class="text-[15px] text-ink">
                 <span class="font-bold">
-                  {{ scrap.direction === 'enviado' ? 'Para ' + scrap.toName : scrap.authorName }}
+                  @if (scrap.direction === 'enviado') {
+                    Para {{ scrap.toName }}
+                  } @else {
+                    <a [routerLink]="['/perfil', scrap.authorId]" class="hover:underline">{{
+                      scrap.authorName
+                    }}</a>
+                  }
                 </span>
                 <span class="text-xs text-ink-muted"> · {{ scrap.createdAt }}</span>
               </p>

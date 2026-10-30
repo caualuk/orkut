@@ -77,6 +77,7 @@ nada de dados de exemplo. Leitura em um único `GET /state`; ações em `POST` (
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Estado       | `GET /state`                                                                                                                                                               | perfil, preferências, amigos, recados, conversas, feed…        |
 | Perfil       | `POST /profile` (parcial), `POST /profile/photo` (JPG/PNG cru ≤ 5 MB), `…/photo/remove`, `GET /users/:id/photo`                                                            | campos desconhecidos → 400; imagem conferida por _magic bytes_ |
+| Perfil público | `GET /users/:id/profile`                                                                                                                                                 | lista fechada de campos públicos; registra a visita            |
 | Preferências | `POST /settings` (parcial, mesclado)                                                                                                                                       | tema, privacidade, notificações                                |
 | Pessoas      | `POST /people/search`, `POST /friends/{request,cancel,accept,reject,remove,best,fan}`                                                                                      | pedido invertido vira aceite; sem pares duplicados             |
 | Recados      | `POST /scraps`, `/scraps/:id/{reply,like,read,delete}`                                                                                                                     | só entre amigos (ou no próprio mural)                          |
@@ -233,11 +234,12 @@ Itens do spec de movimento e componentes:
 
 - **Sem dados de demonstração**: uma conta nova vê as telas vazias (com convites para
   adicionar amigos, publicar status ou criar comunidade) até haver atividade real.
-- **Visitas ao perfil** só passam a contar quando existir a página de perfil de outros
-  membros; até lá os contadores ficam em zero.
-- **Música do perfil** só toca para o próprio usuário enquanto não existir a página de
-  perfil de outros membros. Vem do YouTube em player visível: alguns vídeos não permitem
-  incorporação e, nesse caso, o próprio player avisa.
+- **Visitas ao perfil** contam uma por pessoa (`profile_visits` guarda a última visita de
+  cada visitante): o total é de visitantes, não de aberturas.
+- **Música do perfil** vem do YouTube em player visível e começa ao entrar no perfil. Quem
+  abre o link direto, sem ter clicado no site, pode precisar apertar ▶: os navegadores
+  bloqueiam som antes do primeiro clique. Alguns vídeos não permitem incorporação e, nesse
+  caso, o próprio player avisa.
 - **Sincronização** por polling (20 s), sem WebSocket: mensagens novas aparecem em até
   20 s.
 - **Desativar conta** pede confirmação e encerra a sessão; ocultar o perfil de fato

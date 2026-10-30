@@ -61,6 +61,23 @@ export interface PersonRef {
   photoUrl: string | null;
 }
 
+export type ProfileRelation = 'me' | 'friend' | 'sent' | 'received' | 'none';
+
+/** Perfil de um membro como os outros o veem (`/perfil/:id`). */
+export interface PublicProfile extends PersonRef {
+  location: string;
+  about: string;
+  interests: string[];
+  memberSince: string;
+  fans: number;
+  friendCount: number;
+  mutualFriends: number;
+  relation: ProfileRelation;
+  music: { videoId: string; title: string } | null;
+  friends: PersonRef[];
+  communities: Community[];
+}
+
 export interface Friend extends PersonRef {
   bestFriend: boolean;
   mutualFriends: number;
@@ -166,6 +183,7 @@ export interface FeedComment {
 export interface FeedItem {
   id: string;
   kind: FeedKind;
+  actorId: string;
   actorName: string;
   tone: Tone;
   photoUrl: string | null;
@@ -257,25 +275,24 @@ export interface Settings {
 /** Sugestões de interesses do "Editar perfil" (opções de UI, não dados de usuários). */
 export const SUGGESTED_INTERESTS = ['Música', 'Viagens', 'Tecnologia', 'Café', 'Games'];
 
-export const COMMUNITY_ICONS = [
-  'groups',
-  'music_note',
-  'local_cafe',
-  'sports_esports',
-  'movie',
-  'menu_book',
-  'pets',
-  'sports_soccer',
-  'travel_explore',
-  'school',
-  'code',
-  'restaurant',
-  'wb_sunny',
-  'bedtime',
-  'favorite',
-  'palette',
-  'photo_camera',
-  'theater_comedy',
+/** Categorias da criação de comunidade; cada uma define o ícone (quando não há foto). */
+export const COMMUNITY_CATEGORIES = [
+  { label: 'Amigos', icon: 'groups' },
+  { label: 'Música', icon: 'music_note' },
+  { label: 'Games', icon: 'sports_esports' },
+  { label: 'Filmes e séries', icon: 'movie' },
+  { label: 'Livros', icon: 'menu_book' },
+  { label: 'Animais', icon: 'pets' },
+  { label: 'Esportes', icon: 'sports_soccer' },
+  { label: 'Viagens', icon: 'travel_explore' },
+  { label: 'Educação', icon: 'school' },
+  { label: 'Tecnologia', icon: 'code' },
+  { label: 'Comida e bebida', icon: 'restaurant' },
+  { label: 'Romance', icon: 'favorite' },
+  { label: 'Arte', icon: 'palette' },
+  { label: 'Fotografia', icon: 'photo_camera' },
+  { label: 'Humor', icon: 'theater_comedy' },
+  { label: 'Outros', icon: 'wb_sunny' },
 ] as const;
 
 export const GENDER_LABELS: Record<Gender, string> = {

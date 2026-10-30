@@ -17,6 +17,8 @@ import type {
   FeedComment,
   FeedItem,
   Friend,
+  ProfileRelation,
+  PublicProfile,
   FriendRequest,
   PersonRef,
   Photo,
@@ -59,6 +61,21 @@ export interface ProfileDto {
   memberSince: string;
   visits: { total: number; lastWeek: number; yesterday: number };
   recentVisitors: PersonDto[];
+}
+
+export interface PublicProfileDto extends PersonDto {
+  city: string;
+  country: string;
+  about: string;
+  interests: string[];
+  memberSince: string;
+  fans: number;
+  friendCount: number;
+  mutualFriends: number;
+  relation: ProfileRelation;
+  music: { videoId: string; title: string } | null;
+  friends: PersonDto[];
+  communities: CommunitySummaryDto[];
 }
 
 export interface FriendDto extends PersonDto {
@@ -251,6 +268,27 @@ export function toProfile(base: string, dto: ProfileDto, photoVersion: number): 
   };
 }
 
+export function toPublicProfile(
+  base: string,
+  dto: PublicProfileDto,
+  photoVersion: number,
+): PublicProfile {
+  return {
+    ...toPerson(base, dto),
+    location: [dto.city, dto.country].filter(Boolean).join(', '),
+    about: dto.about,
+    interests: dto.interests,
+    memberSince: shortDate(dto.memberSince),
+    fans: dto.fans,
+    friendCount: dto.friendCount,
+    mutualFriends: dto.mutualFriends,
+    relation: dto.relation,
+    music: dto.music,
+    friends: dto.friends.map((friend) => toPerson(base, friend)),
+    communities: dto.communities.map((c) => toCommunitySummary(base, c, photoVersion)),
+  };
+}
+
 export function toFriend(base: string, dto: FriendDto): Friend {
   return {
     ...toPerson(base, dto),
@@ -371,6 +409,7 @@ export function toFeedItem(base: string, dto: FeedItemDto): FeedItem {
   const common = {
     id: dto.id,
     kind: dto.kind,
+    actorId: actor.id,
     actorName: actor.name,
     tone: actor.tone,
     photoUrl: actor.photoUrl,

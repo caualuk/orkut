@@ -195,6 +195,43 @@ describe.skipIf(!hasDatabase)('PgSocialRepository (PostgreSQL)', () => {
     expect(leftovers.rowCount).toBe(0);
   });
 
+  it('perfil público: mostra a música e nada do que é privado', async () => {
+    await repo.updateProfile(ana, {
+      city: 'Recife',
+      contact: { phone: '81999990000' },
+      personal: { musicId: 'dQw4w9WgXcQ', musicTitle: 'Anna Júlia' },
+    });
+
+    const seen = (await repo.getPublicProfile(bia, ana))!;
+    expect(seen).toMatchObject({
+      id: ana,
+      name: 'Ana Teste',
+      city: 'Recife',
+      music: { videoId: 'dQw4w9WgXcQ', title: 'Anna Júlia' },
+      relation: 'friend',
+    });
+    expect(seen).not.toHaveProperty('email');
+    const leaked = JSON.stringify(seen);
+    for (const secret of [emails[0]!, '81999990000', 'password', 'contact', 'birthday']) {
+      expect(leaked).not.toContain(secret);
+    }
+
+    await repo.updateProfile(ana, { personal: { musicId: '"><script>', musicTitle: 'x' } });
+    expect((await repo.getPublicProfile(bia, ana))!.music).toBeNull();
+    expect((await repo.getPublicProfile(ana, ana))!.relation).toBe('me');
+    expect(await repo.getPublicProfile(ana, '00000000-0000-4000-8000-000000000000')).toBeNull();
+  });
+
+  it('visita ao perfil conta uma vez por pessoa e nunca para si mesmo', async () => {
+    const total = async () => (await repo.getProfile(ana)).visits.total;
+    const before = await total();
+    await repo.recordVisit(ana, ana);
+    expect(await total()).toBe(before);
+    await repo.recordVisit(bia, ana);
+    await repo.recordVisit(bia, ana);
+    expect(await total()).toBe(Math.max(before, 1));
+  });
+
   it('busca de pessoas trata curingas do LIKE como texto', async () => {
     expect((await repo.searchPeople(ana, 'Bia')).map((p) => p.id)).toContain(bia);
     expect(await repo.searchPeople(ana, '%')).toEqual([]);

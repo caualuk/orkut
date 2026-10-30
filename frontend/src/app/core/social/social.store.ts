@@ -15,16 +15,19 @@ import {
   toFriendRequest,
   toPhoto,
   toProfile,
+  toPublicProfile,
   toScrap,
   toSuggestion,
   toTestimonial,
   type CommunityDetailDto,
   type CommunitySummaryDto,
+  type PublicProfileDto,
   type SocialStateDto,
   type SuggestionDto,
 } from './social.api';
 import { firstNameOf } from './social.format';
 import type {
+  PublicProfile,
   Album,
   Community,
   Conversation,
@@ -280,6 +283,18 @@ export class SocialStore {
     } catch (error) {
       this.errorState.set(toApiError(error).message);
       return [];
+    }
+  }
+
+  /** Perfil de um membro; cada abertura conta como visita para ele. */
+  async loadPublicProfile(id: string): Promise<PublicProfile | null> {
+    try {
+      const dto = await firstValueFrom(
+        this.http.get<PublicProfileDto>(`${this.base}/users/${encodeURIComponent(id)}/profile`),
+      );
+      return toPublicProfile(this.base, dto, this.photoVersion);
+    } catch {
+      return null;
     }
   }
 
@@ -650,7 +665,12 @@ export class SocialStore {
   async deleteCommunity(slug: string): Promise<boolean> {
     const community = this.communityById(slug);
     if (!community) return false;
-    const ok = await this.send(`/communities/${community.dbId}/delete`, undefined, undefined, false);
+    const ok = await this.send(
+      `/communities/${community.dbId}/delete`,
+      undefined,
+      undefined,
+      false,
+    );
     if (!ok) return false;
     this.communitiesState.update((list) => list.filter((c) => c.id !== slug));
     await this.load();

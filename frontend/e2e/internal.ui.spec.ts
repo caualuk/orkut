@@ -15,6 +15,8 @@ const SCREENS = [
   { path: '/configuracoes', title: 'Configurações · orkut' },
   { path: '/amigos', title: 'Amigos · orkut' },
   { path: '/comunidades', title: 'Comunidades · orkut' },
+  { path: '/perfil', title: 'Perfil · orkut' },
+  { path: `/perfil/${PEOPLE.ana.id}`, title: 'Perfil · orkut' },
 ];
 
 let auth: Awaited<ReturnType<typeof mockAuthApi>>;
@@ -23,6 +25,9 @@ let social: Awaited<ReturnType<typeof mockSocialApi>>;
 test.beforeEach(async ({ page }) => {
   auth = await mockAuthApi(page, { authenticated: true });
   social = await mockSocialApi(page);
+  await page.route('https://www.youtube-nocookie.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: '<title>video</title>' }),
+  );
 });
 
 for (const screen of SCREENS) {
@@ -203,7 +208,7 @@ test('Comunidades: cria a própria comunidade e publica um tópico', async ({ pa
   await page.goto('/comunidades');
   await page.getByTestId('create-community').click();
   await page.getByTestId('form-name').fill('Amantes de café');
-  await page.getByTestId('form-category').fill('Gastronomia');
+  await page.getByTestId('form-category').selectOption('Comida e bebida');
   await page.getByTestId('form-submit').click();
 
   await expect(page).toHaveURL(/\/comunidades\/amantes-de-cafe$/);
@@ -216,11 +221,68 @@ test('Comunidades: cria a própria comunidade e publica um tópico', async ({ pa
   await expect(page.getByTestId('topic-list')).toContainText('Qual o melhor grão?');
 });
 
+test('Comunidades: a categoria define o ícone e não há mais select de ícone', async ({ page }) => {
+  await page.goto('/comunidades');
+  await page.getByTestId('create-community').click();
+  await expect(page.getByTestId('form-icon')).toHaveCount(0);
+  await page.getByTestId('form-name').fill('Cinéfilos');
+  await page.getByTestId('form-category').selectOption('Filmes e séries');
+  await page.getByTestId('form-submit').click();
+  await expect(page).toHaveURL(/\/comunidades\/cinefilos$/);
+  expect(social.requests).toContainEqual(
+    expect.objectContaining({
+      path: '/communities',
+      body: expect.objectContaining({ category: 'Filmes e séries', icon: 'movie' }),
+    }),
+  );
+});
+
+test('Comunidade do dono: os botões não cobrem o nome nem os membros', async ({ page }) => {
+  for (const width of [1440, 1280, 1024, 834, 600, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/comunidades');
+    await page.getByTestId('create-community').click();
+    await page.getByTestId('form-name').fill(`Comunidade com nome bem comprido ${width}`);
+    await page.getByTestId('form-submit').click();
+    await expect(page.getByTestId('delete-community')).toBeVisible();
+
+    const meta = (await page.getByTestId('community-meta').boundingBox())!;
+    const actions = (await page.getByTestId('community-actions').boundingBox())!;
+    const overlaps =
+      meta.x < actions.x + actions.width &&
+      actions.x < meta.x + meta.width &&
+      meta.y < actions.y + actions.height &&
+      actions.y < meta.y + meta.height;
+    expect(overlaps, `sobreposição em ${width}px`).toBe(false);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+  }
+});
+
+test('Colunas laterais acompanham a rolagem', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'As colunas laterais só existem do tablet para cima.');
+  await page.goto('/home');
+  await page.getByTestId('home-social').waitFor();
+  await page.evaluate(() => {
+    const filler = document.createElement('div');
+    filler.style.height = '3000px';
+    document.querySelector('#conteudo section')?.append(filler);
+  });
+
+  await page.evaluate(() => window.scrollTo(0, 1500));
+  for (const id of ['side-menu', 'home-social']) {
+    const box = (await page.getByTestId(id).boundingBox())!;
+    expect(box.y, id).toBeGreaterThanOrEqual(0);
+    expect(box.y, id).toBeLessThan(120);
+  }
+});
+
 test('Comunidades: o dono adiciona e remove a foto', async ({ page }) => {
   await page.goto('/comunidades');
   await page.getByTestId('create-community').click();
   await page.getByTestId('form-name').fill('Fotos de viagem');
-  await page.getByTestId('form-category').fill('Turismo');
+  await page.getByTestId('form-category').selectOption('Viagens');
   await page.getByTestId('form-submit').click();
   await expect(page).toHaveURL(/\/comunidades\/fotos-de-viagem$/);
 
@@ -252,7 +314,7 @@ test('Comunidades: já escolhe a foto ao criar', async ({ page }) => {
     buffer: Buffer.from('iVBORw0KGgo=', 'base64'),
   });
   await page.getByTestId('form-name').fill('Foto na criação');
-  await page.getByTestId('form-category').fill('Turismo');
+  await page.getByTestId('form-category').selectOption('Viagens');
   await page.getByTestId('form-submit').click();
 
   await expect(page).toHaveURL(/\/comunidades\/foto-na-criacao$/);
@@ -263,7 +325,7 @@ test('Comunidades: o dono exclui depois de confirmar no modal', async ({ page })
   await page.goto('/comunidades');
   await page.getByTestId('create-community').click();
   await page.getByTestId('form-name').fill('Vai ser excluída');
-  await page.getByTestId('form-category').fill('Testes');
+  await page.getByTestId('form-category').selectOption('Outros');
   await page.getByTestId('form-submit').click();
   await expect(page).toHaveURL(/\/comunidades\/vai-ser-excluida$/);
 
@@ -280,6 +342,76 @@ test('Comunidades: o dono exclui depois de confirmar no modal', async ({ page })
   await expect(page).toHaveURL(/\/comunidades$/);
   await expect(page.getByText('Comunidade excluída.')).toBeVisible();
   await expect(page.getByRole('link', { name: /Vai ser excluída/ })).toHaveCount(0);
+});
+
+test('Perfil de outro membro: a música toca ao entrar e para ao sair', async ({ page }) => {
+  await page.goto('/amigos');
+  await page.getByTestId('friend-profile').first().click();
+  await expect(page).toHaveURL(new RegExp(`/perfil/${PEOPLE.ana.id}$`));
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ana Teste');
+
+  const player = page.getByTestId('music-player');
+  await expect(player).toContainText('Anna Júlia');
+  await expect(player).toContainText('perfil de Ana Teste');
+  await expect(player.locator('iframe')).toHaveAttribute('src', /embed\/dQw4w9WgXcQ/);
+
+  await page.getByTestId('music-close').click();
+  await expect(player).toHaveCount(0);
+  await page.getByTestId('profile-music-toggle').click();
+  await expect(player).toBeVisible();
+
+  await page.getByTestId('friend-link').first().click();
+  await expect(page).toHaveURL(new RegExp(`/perfil/${PEOPLE.bruno.id}$`));
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bruno Teste');
+  await expect(player).toHaveCount(0);
+  await expect(page.getByTestId('profile-music')).toHaveCount(0);
+});
+
+test('Perfil de outro membro: só troca a sua música se ele tiver uma', async ({ page }) => {
+  const openFromFriends = async (index: number) => {
+    await page.locator('a[href="/amigos"]:visible').first().click();
+    await page.getByTestId('friend-profile').nth(index).click();
+  };
+  await page.goto('/home');
+  await page.getByTestId('music-toggle').click();
+  await page.getByTestId('music-url').fill('https://youtu.be/jNQXAC9IVRw');
+  await page.getByTestId('music-title').fill('Minha música');
+  await page.getByTestId('music-save').click();
+  await expect(page.getByTestId('music-player')).toContainText('Minha música');
+
+  await openFromFriends(1);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bruno Teste');
+  await expect(page.getByTestId('music-player')).toContainText('Minha música');
+
+  await openFromFriends(0);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ana Teste');
+  await expect(page.getByTestId('music-player')).toContainText('Anna Júlia');
+});
+
+test('Perfil: ações conforme a relação e endereço inexistente', async ({ page }) => {
+  await page.goto(`/perfil/${PEOPLE.davi.id}`);
+  await page.getByTestId('profile-add').click();
+  await expect(page.getByTestId('profile-cancel')).toHaveText('Pedido enviado');
+  expect(social.requests).toContainEqual(
+    expect.objectContaining({ path: '/friends/request', body: { userId: PEOPLE.davi.id } }),
+  );
+
+  await page.goto(`/perfil/${PEOPLE.carla.id}`);
+  await expect(page.getByTestId('profile-accept')).toBeVisible();
+
+  await page.goto(`/perfil/${PEOPLE.ana.id}`);
+  await expect(page.getByTestId('profile-scrap')).toHaveAttribute(
+    'href',
+    `/recados?para=${PEOPLE.ana.id}`,
+  );
+
+  await page.goto('/perfil');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Paulo Teste');
+  await expect(page.getByTestId('profile-edit')).toBeVisible();
+  await expect(page.getByTestId('music-player')).toHaveCount(0);
+
+  await page.goto('/perfil/00000000-0000-4000-8000-000000000000');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Perfil não encontrado');
 });
 
 test('Música do perfil: a sincronização e a navegação não reiniciam o vídeo', async ({ page }) => {

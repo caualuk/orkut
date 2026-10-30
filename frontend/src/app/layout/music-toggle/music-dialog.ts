@@ -92,17 +92,17 @@ export class MusicDialog {
     if (!videoId) return;
     const title = this.title().trim() || 'Música do perfil';
     this.store.updateProfile({ music: { videoId, title } });
-    this.player.playing.set(true);
+    this.player.play({ videoId, title });
     this.ref.close();
   }
 
   protected stop(): void {
-    this.player.playing.set(false);
+    this.player.stop();
     this.ref.close();
   }
 
   protected remove(): void {
-    this.player.playing.set(false);
+    this.player.stop();
     this.store.updateProfile({ music: null });
     this.ref.close();
     this.snackBar.open('Música removida do perfil.', 'OK', { duration: 3000 });
