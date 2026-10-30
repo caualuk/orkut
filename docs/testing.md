@@ -71,7 +71,8 @@ Os E2E full-stack criam um usuário próprio pelo cadastro (`/api/auth/signup`),
 ### Cadastro e telas internas
 
 - **Backend**: `POST /api/auth/signup` — sucesso com cookie e sessão válida, hash da
-  senha, nascimento/sexo opcionais, normalização, `409` sem sessão, 9 casos de validação,
+  senha, dados de perfil (relacionamento, cidade, descrição) e padrões, nascimento/sexo
+  opcionais, normalização, `409` sem sessão, 12 casos de validação, perfil criado no banco,
   _mass assignment_, CSRF e rate limit; serviço e banco real (constraints da migration 002).
 - **Frontend (unitários)**: `SocialStore` (contadores, recados, curtidas, respostas,
   amizade, conversas, depoimentos, enquete com voto único, tópicos, fotos, nome editado,
@@ -109,6 +110,16 @@ Além dos testes, as telas foram comparadas com os frames do design em 1440, 834
   comentário), aniversário pela data de nascimento, tema salvo na API, busca de pessoas e
   pedido de amizade, criar comunidade e tópico, Editar perfil sem a aba Pessoal e sem
   cursor de texto em conteúdo estático.
+
+### Cadastro em etapas e onboarding
+
+- **Cadastro em etapas** (unitários): etapa 1 bloqueia incompleta, avança e volta
+  preservando dados, exige termos, emite dados normalizados + foto, recusa GIF, `409`
+  volta à etapa 1. **Interesses**: mínimo 3, livre sem duplicar, limite 20, grava e vai
+  à Home, erro da API, pular.
+- **Cadastro em etapas** (E2E): axe nas duas etapas, validação, medidor, voltar, fluxo
+  completo até a Home (corpo enviado, foto `image/png`, interesses), pular, falha só na
+  foto, `409` e `/boas-vindas` protegida.
 
 ### E2E (Playwright)
 

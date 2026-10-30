@@ -57,9 +57,12 @@ src/
 | GET    | `/api/auth/me`      | Usuário da sessão atual                                    | 200, 401                |
 | DELETE | `/api/auth/account` | `{ password }` → exclui a conta e todos os dados (cascata) | 204, 400, 401, 403, 429 |
 
-Corpo do cadastro: `{ firstName, lastName, email, password, birthDate?, gender?, acceptTerms: true }`.
-Senha com 8+ caracteres, letras e números; nascimento opcional (13+ anos); `gender` em
-`feminino | masculino | outro | nao-informar`. E-mail já cadastrado → `409 EMAIL_TAKEN`.
+Corpo do cadastro: `{ firstName, lastName, email, password, birthDate?, gender?,
+relationship?, city?, about?, acceptTerms: true }`. Senha com 8+ caracteres, letras e
+números; nascimento 13+ anos; `gender` em `feminino | masculino | outro | nao-informar`;
+`relationship` como em `app.profiles`; `city` ≤ 80; `about` ≤ 500. O usuário e a linha de
+`app.profiles` são criados no **mesmo comando SQL** (não existe conta sem perfil).
+E-mail já cadastrado → `409 EMAIL_TAKEN`.
 O cadastro tem rate limit próprio (5 tentativas por janela, todas contam).
 
 Formato de erro: `{ "error": { "code": "INVALID_CREDENTIALS", "message": "...", "details"?: [...] } }`.
@@ -144,13 +147,27 @@ src/app/
   (text field, checkbox, spinner, ripple, ícones) com overrides de tokens; CSS de
   componente apenas para efeitos 3D.
 
+### Cadastro e onboarding
+
+1. **Etapa 1** (mesmo card): nome, sobrenome, sexo, relacionamento, aniversário, cidade,
+   e-mail e senha — todos obrigatórios.
+2. **Etapa 2**: foto de perfil (opcional, JPG/PNG até 5 MB), descrição breve (vira o
+   "Quem sou eu") e aceite dos termos. "Voltar" preserva o que foi preenchido.
+3. `POST /api/auth/signup` cria a conta + perfil e já inicia a sessão; em seguida a foto
+   vai para `POST /api/social/profile/photo`. Se só a foto falhar, a conta continua criada
+   e a tela seguinte avisa. `409` (e-mail em uso) devolve o usuário à etapa 1.
+4. **`/boas-vindas`**: interesses sugeridos + campo livre (sem duplicar, até 20). "Continuar"
+   exige 3+ e grava via `POST /api/social/profile { interests }`; "Pular por agora" vai
+   direto para a Home.
+
 ### Rotas
 
 | Rota               | Guard        | Tela                                           |
 | ------------------ | ------------ | ---------------------------------------------- |
 | `/`                | —            | redireciona para `/home`                       |
 | `/login`           | `guestGuard` | Login                                          |
-| `/cadastro`        | `guestGuard` | Criar conta                                    |
+| `/cadastro`        | `guestGuard` | Criar conta (2 etapas)                         |
+| `/boas-vindas`     | `authGuard`  | Onboarding: escolha de interesses              |
 | `/recuperar-senha` | `guestGuard` | Placeholder (próxima etapa)                    |
 | `/home`            | `authGuard`  | Home                                           |
 | `/perfil`          | `authGuard`  | redireciona para `/home`                       |

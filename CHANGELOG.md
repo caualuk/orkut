@@ -10,6 +10,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 - **Deploy na Vercel** em um único projeto: Angular estático + Express como Serverless
   Function (`api/index.mjs`), com fallback de SPA e cabeçalhos de segurança; passo a passo
   em `docs/deploy.md`.
+- **Onboarding de interesses** (`/boas-vindas`) depois do cadastro: sugestões + campo
+  livre, mínimo de 3 ou "Pular por agora"; grava em `POST /api/social/profile`.
 - **API social com dados reais** (`/api/social`) e migration `003_social`: perfil, foto,
   amizades, recados, mensagens, depoimentos, álbuns e fotos, status, feed com curtidas e
   comentários, comunidades (criação, tópicos, enquetes, eventos) e preferências — tudo
@@ -28,11 +30,15 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Alterado
 
+- **Cadastro em 2 etapas no mesmo card**: (1) nome, sobrenome, sexo, relacionamento,
+  aniversário, cidade, e-mail e senha; (2) foto de perfil e descrição breve + termos.
+- `POST /api/auth/signup` aceita `relationship`, `city` e `about` e cria a linha de
+  `app.profiles` junto com o usuário; a foto é enviada logo após o cadastro.
 - O frontend deixou de usar dados de demonstração: `social.seed.ts` foi removido e o
   `SocialStore` passou a carregar e salvar tudo na API (sincroniza a cada 20 s).
 - Aniversários vêm da data de nascimento dos amigos (antes: "melhores amigos").
 - Recados escritos no próprio mural aparecem em "Enviados".
-- Cena do login sem pessoas fictícias ("Novo scrap", "seus fãs").
+- Cenas do login e do cadastro sem pessoas ou números fictícios ("Novo scrap", "seus fãs").
 - Editar perfil sem a aba **Pessoal** (por enquanto); a foto é enviada na hora.
 
 ### Corrigido
