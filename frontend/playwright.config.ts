@@ -1,15 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
-import { existsSync } from 'node:fs';
 
 /**
  * Testes E2E.
  * - `*.ui.spec.ts`: API simulada (page.route) — determinísticos, rodam em qualquer ambiente.
- * - `*.fullstack.spec.ts`: frontend + backend + PostgreSQL reais, usando o usuário do seed.
- *
- * As credenciais do usuário de teste vêm do `backend/.env` (nunca versionado).
+ * - `*.fullstack.spec.ts`: frontend + backend + PostgreSQL reais, com um usuário criado
+ *   pelo cadastro a cada execução.
  */
-const backendEnv = '../backend/.env';
-if (existsSync(backendEnv)) process.loadEnvFile(backendEnv);
 
 const isCI = Boolean(process.env['CI']);
 

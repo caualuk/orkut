@@ -2,15 +2,27 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Fluxo real: Angular → proxy → API Express → PostgreSQL (Supabase).
- * Usa o usuário criado por `npm run db:seed` (credenciais lidas do backend/.env).
+ * Cria um usuário próprio pelo cadastro, com e-mail único a cada execução.
  */
-const email = process.env['SEED_USER_EMAIL'];
-const password = process.env['SEED_USER_PASSWORD'];
+const email = `e2e-${Date.now()}@orkut.test`;
+const password = 'senhaE2E2026';
 
 test.describe('Login full-stack', () => {
-  test.skip(!email || !password, 'Defina SEED_USER_EMAIL/SEED_USER_PASSWORD no backend/.env');
   // Um worker por vez: evita consumir o rate limit do login em paralelo.
   test.describe.configure({ mode: 'serial' });
+
+  test.beforeAll(async ({ playwright, baseURL }) => {
+    // Contexto isolado: o cookie do cadastro não vaza para os testes de login.
+    const api = await playwright.request.newContext({
+      baseURL,
+      extraHTTPHeaders: { Origin: baseURL! },
+    });
+    const signup = await api.post('/api/auth/signup', {
+      data: { firstName: 'Teste', lastName: 'E2E', email, password, acceptTerms: true },
+    });
+    expect(signup.ok()).toBe(true);
+    await api.dispose();
+  });
 
   test('autentica, protege o cookie e encerra a sessão', async ({ page, context }) => {
     await page.goto('/login');

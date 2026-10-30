@@ -25,6 +25,12 @@ const envSchema = z.object({
     .default('true')
     .transform((value) => value === 'true'),
   DATABASE_SSL_CA_PATH: z.string().optional(),
+  // Conteúdo PEM da CA (aceita `\n` literal): alternativa ao _PATH em ambientes sem
+  // acesso ao arquivo. Tem precedência sobre ele.
+  DATABASE_SSL_CA: z
+    .string()
+    .optional()
+    .transform((value) => value?.replace(/\\n/g, '\n').trim() || undefined),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(12),
   SESSION_REMEMBER_DAYS: z.coerce.number().int().positive().default(30),
 });
@@ -68,9 +74,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       ssl: env.DATABASE_SSL
         ? {
             rejectUnauthorized: true,
-            ...(env.DATABASE_SSL_CA_PATH && {
-              ca: readFileSync(resolve(env.DATABASE_SSL_CA_PATH), 'utf8'),
-            }),
+            ...(env.DATABASE_SSL_CA
+              ? { ca: env.DATABASE_SSL_CA }
+              : env.DATABASE_SSL_CA_PATH && {
+                  ca: readFileSync(resolve(env.DATABASE_SSL_CA_PATH), 'utf8'),
+                }),
           }
         : false,
     },

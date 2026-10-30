@@ -8,7 +8,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/server.ts', 'src/db/migrate.ts', 'src/db/seed.ts'],
+      exclude: ['src/server.ts', 'src/db/migrate.ts'],
       reporter: ['text', 'html'],
     },
   },

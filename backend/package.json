@@ -12,8 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:db": "vitest run --config vitest.db.config.ts",
-    "db:migrate": "tsx --env-file=.env src/db/migrate.ts",
-    "db:seed": "tsx --env-file=.env src/db/seed.ts"
+    "db:migrate": "tsx --env-file=.env src/db/migrate.ts"
   },
   "license": "UNLICENSED",
   "type": "module",

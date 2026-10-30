@@ -28,6 +28,19 @@ describe('loadConfig', () => {
     expect(config.database.ssl).toEqual({ rejectUnauthorized: true });
   });
 
+  it('aceita a CA em PEM pela variável, com precedência sobre o arquivo', () => {
+    const config = loadConfig({
+      ...base,
+      DATABASE_SSL: 'true',
+      DATABASE_SSL_CA: '-----BEGIN CERTIFICATE-----\\nabc\\n-----END CERTIFICATE-----',
+      DATABASE_SSL_CA_PATH: 'nao/existe.crt',
+    });
+    expect(config.database.ssl).toEqual({
+      rejectUnauthorized: true,
+      ca: '-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----',
+    });
+  });
+
   it('separa múltiplas origens de CORS', () => {
     const config = loadConfig({ ...base, CORS_ORIGINS: 'https://a.com, https://b.com' });
     expect(config.corsOrigins).toEqual(['https://a.com', 'https://b.com']);
