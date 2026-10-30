@@ -330,6 +330,13 @@ export async function mockSocialApi(page: Page, state: SocialState = initialSoci
         state.communities.push(summary);
         return json(route, { slug }, 201);
       }
+      case !!(match = path.match(/^\/communities\/([^/]+)\/delete$/)): {
+        const record = [...communities.values()].find((c) => c.summary.id === match![1]);
+        if (!record) return route.fulfill({ status: 404 });
+        communities.delete(record.summary.slug);
+        state.communities = state.communities.filter((c) => c['id'] !== record.summary.id);
+        return noContent(route);
+      }
       case !!(match = path.match(/^\/communities\/([^/]+)\/photo(\/remove)?$/)): {
         const record = [...communities.values()].find((c) => c.summary.id === match![1]);
         if (!record) return route.fulfill({ status: 404 });

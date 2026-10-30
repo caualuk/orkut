@@ -7,13 +7,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import {
-  type AbstractControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  type ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
@@ -24,7 +18,6 @@ import {
   type Profile,
   type Relationship,
 } from '../../core/social/social.models';
-import { parseYouTubeId, youTubeLink } from '../../core/social/profile-music';
 import { SocialStore } from '../../core/social/social.store';
 import { ProfilePhoto } from '../../shared/ui/profile-photo/profile-photo';
 
@@ -35,12 +28,6 @@ const MAX_INTERESTS = 12;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 /** Mesma regra da API: letras (inclusive acentuadas), espaço, apóstrofo e hífen. */
 const NAME_PATTERN = /^[\p{L}\p{M}' -]*$/u;
-
-/** Vazio é válido (sem música); preenchido precisa ser um link do YouTube. */
-function youTubeLinkValidator(control: AbstractControl<string>): ValidationErrors | null {
-  const value = control.value.trim();
-  return !value || parseYouTubeId(value) ? null : { youtube: true };
-}
 
 /** Editar perfil ("Editar perfil · Desktop 1440", "M · Editar perfil"). */
 @Component({
@@ -91,8 +78,6 @@ export class EditProfilePage {
     birthday: [''],
     city: ['', Validators.maxLength(80)],
     about: ['', Validators.maxLength(ABOUT_MAX_LENGTH)],
-    musicUrl: ['', youTubeLinkValidator],
-    musicTitle: ['', Validators.maxLength(80)],
     social: this.fb.group({
       humor: ['', Validators.maxLength(60)],
       style: ['', Validators.maxLength(60)],
@@ -172,11 +157,9 @@ export class EditProfilePage {
       return;
     }
 
-    const { musicUrl, musicTitle, ...value } = this.form.getRawValue();
-    const videoId = parseYouTubeId(musicUrl);
+    const value = this.form.getRawValue();
     this.store.updateProfile({
       ...value,
-      music: videoId ? { videoId, title: musicTitle.trim() || 'Música do perfil' } : null,
       firstName: value.firstName.trim(),
       lastName: value.lastName.trim(),
       interests: this.interests(),
@@ -195,8 +178,6 @@ export class EditProfilePage {
       birthday: profile.birthday,
       city: profile.city,
       about: profile.about,
-      musicUrl: profile.music ? youTubeLink(profile.music.videoId) : '',
-      musicTitle: profile.music?.title ?? '',
       social: profile.social,
       contact: profile.contact,
       professional: profile.professional,
@@ -209,9 +190,7 @@ export class EditProfilePage {
     const c = this.form.controls;
     switch (tab) {
       case 'geral':
-        return [c.firstName, c.lastName, c.city, c.about, c.musicUrl].some(
-          (control) => control.invalid,
-        );
+        return [c.firstName, c.lastName, c.city, c.about].some((control) => control.invalid);
       case 'social':
         return c.social.invalid;
       case 'contato':

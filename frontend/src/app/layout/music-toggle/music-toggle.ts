@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Router } from '@angular/router';
 import { SocialStore } from '../../core/social/social.store';
+import { MusicDialog } from './music-dialog';
 import { MusicPlayerState } from './music-player';
 
 /**
- * Botão "♪" da Top App Bar: toca a música escolhida em Editar perfil ou, sem
- * música, leva até lá. Enquanto toca, o ícone vira um equalizador animado.
+ * Botão "♪" da Top App Bar: abre o modal da música do perfil. Enquanto toca,
+ * o ícone vira um equalizador animado.
  */
 @Component({
   selector: 'ok-music-toggle',
@@ -19,10 +19,10 @@ import { MusicPlayerState } from './music-player';
       type="button"
       class="music"
       [class.music--on]="playing()"
-      [attr.aria-pressed]="playing()"
+      aria-haspopup="dialog"
       aria-label="Música do perfil"
       [matTooltip]="tooltip()"
-      (click)="toggle()"
+      (click)="open()"
       data-testid="music-toggle"
     >
       @if (playing()) {
@@ -88,23 +88,16 @@ import { MusicPlayerState } from './music-player';
 })
 export class MusicToggle {
   private readonly store = inject(SocialStore);
-  private readonly player = inject(MusicPlayerState);
-  private readonly router = inject(Router);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
-  protected readonly playing = this.player.playing;
+  protected readonly playing = inject(MusicPlayerState).playing;
   protected readonly tooltip = computed(() => {
     const music = this.store.profile().music;
     if (!music) return 'Escolher a música do perfil';
-    return `${this.playing() ? 'Parar' : 'Tocar'}: ${music.title}`;
+    return this.playing() ? `Tocando: ${music.title}` : music.title;
   });
 
-  protected toggle(): void {
-    if (this.store.profile().music) {
-      this.playing.update((playing) => !playing);
-      return;
-    }
-    void this.router.navigateByUrl('/perfil/editar');
-    this.snackBar.open('Cole um link do YouTube em "Música do perfil".', 'OK', { duration: 4000 });
+  protected open(): void {
+    this.dialog.open(MusicDialog, { width: '480px', maxWidth: 'calc(100vw - 32px)' });
   }
 }

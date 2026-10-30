@@ -20,7 +20,7 @@ export class MusicPlayerState {
 
 /**
  * Mini player da música do perfil. Só existe enquanto toca: o vídeo nunca
- * carrega sem o clique no botão ♪, e fica visível como o YouTube exige.
+ * carrega sem o clique em "Salvar e tocar", e fica visível como o YouTube exige.
  */
 @Component({
   selector: 'ok-music-player',

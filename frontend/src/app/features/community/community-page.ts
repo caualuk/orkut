@@ -12,7 +12,10 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { IMAGE_RULES_MESSAGE, isAcceptedImage } from '../../core/social/image-upload';
 import type { Poll } from '../../core/social/social.models';
 import { SocialStore } from '../../core/social/social.store';
 import { Avatar } from '../../shared/ui/avatar/avatar';
@@ -21,18 +24,19 @@ import {
   type ComposeDialogData,
   type ComposeDialogResult,
 } from '../../shared/ui/compose-dialog/compose-dialog';
+import {
+  ConfirmDialog,
+  type ConfirmDialogData,
+} from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { injectCommunityDialogs } from './community-dialogs';
 
 type Tab = 'forum' | 'enquetes' | 'eventos' | 'membros';
-
-/** Fotos maiores são reduzidas no navegador antes do envio. */
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 /** Comunidade ("Comunidade · Desktop 1440", "M · Comunidade"). */
 @Component({
   selector: 'ok-community-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Avatar, MatIconModule, RouterLink],
+  imports: [Avatar, MatIconModule, MatTooltipModule, RouterLink],
   templateUrl: './community-page.html',
   styleUrl: './community-page.css',
 })
@@ -42,6 +46,7 @@ export class CommunityPage {
   protected readonly store = inject(SocialStore);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
   protected readonly dialogs = injectCommunityDialogs();
 
   protected readonly community = computed(() => {
@@ -116,16 +121,20 @@ export class CommunityPage {
     const file = files?.[0];
     const community = this.community();
     if (!file || !community) return;
-    if (!/^image\/(png|jpeg)$/.test(file.type) || file.size > MAX_PHOTO_BYTES) {
-      this.snackBar.open('Use uma imagem JPG ou PNG de até 10 MB.', 'OK', { duration: 4000 });
+    if (!isAcceptedImage(file)) {
+      this.snackBar.open(IMAGE_RULES_MESSAGE, 'OK', { duration: 4000 });
       return;
     }
     this.uploading.set(true);
     const ok = await this.store.uploadCommunityPhoto(community.id, file);
     this.uploading.set(false);
-    this.snackBar.open(ok ? 'Foto da comunidade atualizada!' : 'Não foi possível enviar a foto.', 'OK', {
-      duration: 3000,
-    });
+    this.snackBar.open(
+      ok ? 'Foto da comunidade atualizada!' : 'Não foi possível enviar a foto.',
+      'OK',
+      {
+        duration: 3000,
+      },
+    );
   }
 
   protected async removePhoto(): Promise<void> {
@@ -134,6 +143,33 @@ export class CommunityPage {
     this.uploading.set(true);
     await this.store.removeCommunityPhoto(community.id);
     this.uploading.set(false);
+  }
+
+  protected async deleteCommunity(): Promise<void> {
+    const community = this.community();
+    if (!community) return;
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, {
+          width: '440px',
+          maxWidth: 'calc(100vw - 32px)',
+          data: {
+            title: 'Excluir comunidade?',
+            message: `"${community.name}" será apagada para todos os membros, com tópicos, enquetes e eventos. Essa ação não pode ser desfeita.`,
+            confirmLabel: 'Excluir comunidade',
+            danger: true,
+          },
+        })
+        .afterClosed(),
+    );
+    if (!confirmed) return;
+    // Mantém o carregamento na tela até sair da página da comunidade apagada.
+    this.loading.set(true);
+    if (await this.store.deleteCommunity(community.id)) {
+      this.snackBar.open('Comunidade excluída.', 'OK', { duration: 3000 });
+      await this.router.navigateByUrl('/comunidades');
+    }
+    this.loading.set(false);
   }
 
   protected async share(): Promise<void> {

@@ -171,36 +171,6 @@
                 }
               </div>
             </fieldset>
-
-            <div class="tab:col-span-2">
-              <label class="field-label" for="musicUrl">Música do perfil (link do YouTube)</label>
-              <input
-                id="musicUrl"
-                class="ok-input"
-                type="url"
-                inputmode="url"
-                placeholder="https://www.youtube.com/watch?v=..."
-                formControlName="musicUrl"
-                [attr.aria-invalid]="form.controls.musicUrl.invalid"
-                data-testid="music-url"
-              />
-              @if (form.controls.musicUrl.invalid) {
-                <p class="error">Cole o link de um vídeo do YouTube.</p>
-              }
-            </div>
-            @if (form.controls.musicUrl.value.trim()) {
-              <div class="tab:col-span-2">
-                <label class="field-label" for="musicTitle">Nome da música</label>
-                <input
-                  id="musicTitle"
-                  class="ok-input"
-                  maxlength="80"
-                  placeholder="Ex.: Anna Júlia"
-                  formControlName="musicTitle"
-                  data-testid="music-title"
-                />
-              </div>
-            }
           </div>
         }
         @case ('social') {

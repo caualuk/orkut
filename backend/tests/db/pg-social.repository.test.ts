@@ -166,6 +166,35 @@ describe.skipIf(!hasDatabase)('PgSocialRepository (PostgreSQL)', () => {
     expect((await repo.getCommunity(bia, communitySlug!))!.hasPhoto).toBe(false);
   });
 
+  it('excluir comunidade: só o dono, levando junto o que é dela no feed', async () => {
+    const slug = `excluir-${stamp}`;
+    await repo.createCommunity(ana, {
+      slug,
+      name: 'Comunidade a excluir',
+      category: 'Testes',
+      about: '',
+      icon: 'groups',
+    });
+    const { id } = (await repo.getCommunity(ana, slug))!;
+    await repo.createTopic(ana, id, 'Vai sumir');
+    const item = `comunidades:${id}:${ana}`;
+    await repo.toggleFeedLike(bia, item);
+    await repo.commentOnFeed(bia, item, 'Vai sumir também');
+
+    expect(await repo.deleteCommunity(bia, id)).toBe('forbidden');
+    expect(await repo.getCommunity(bia, slug)).not.toBeNull();
+
+    expect(await repo.deleteCommunity(ana, id)).toBe('ok');
+    expect(await repo.getCommunity(ana, slug)).toBeNull();
+    expect(await repo.deleteCommunity(ana, id)).toBe('not-found');
+    const leftovers = await db.query(
+      `select 1 from app.feed_likes where item_key = $1
+       union all select 1 from app.feed_comments where item_key = $1`,
+      [item],
+    );
+    expect(leftovers.rowCount).toBe(0);
+  });
+
   it('busca de pessoas trata curingas do LIKE como texto', async () => {
     expect((await repo.searchPeople(ana, 'Bia')).map((p) => p.id)).toContain(bia);
     expect(await repo.searchPeople(ana, '%')).toEqual([]);

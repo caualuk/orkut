@@ -1,4 +1,4 @@
-import { inject } from '@angular/core';
+import { inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -54,10 +54,12 @@ export function injectCommunityDialogs() {
   return {
     /** Cria a comunidade (o criador vira dono e primeiro membro) e abre a página dela. */
     async createCommunity(): Promise<void> {
+      const photo = signal<File | null>(null);
       const result = await open({
         title: 'Criar comunidade',
         submitLabel: 'Criar comunidade',
         fields: [
+          { key: 'photo', label: 'Foto', type: 'image', onImage: (file) => photo.set(file) },
           { key: 'name', label: 'Nome', type: 'text', required: true, minLength: 3, maxLength: 80 },
           {
             key: 'category',
@@ -84,7 +86,13 @@ export function injectCommunityDialogs() {
         icon: result['icon'] ?? 'groups',
       });
       if (!slug) return;
-      snackBar.open('Comunidade criada!', 'OK', { duration: 3000 });
+      const file = photo();
+      const photoSent = !file || (await store.uploadCommunityPhoto(slug, file));
+      snackBar.open(
+        photoSent ? 'Comunidade criada!' : 'Comunidade criada, mas a foto não foi enviada.',
+        'OK',
+        { duration: 4000 },
+      );
       await router.navigate(['/comunidades', slug]);
     },
 

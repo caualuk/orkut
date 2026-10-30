@@ -82,6 +82,18 @@
               <mat-icon aria-hidden="true" fontIcon="add" class="!size-4 !text-base" />
               <span class="max-tab:sr-only">Criar comunidade</span>
             </button>
+            @if (community.isOwner) {
+              <button
+                type="button"
+                class="ok-btn-outline !px-3 !text-danger"
+                aria-label="Excluir comunidade"
+                matTooltip="Excluir comunidade"
+                (click)="deleteCommunity()"
+                data-testid="delete-community"
+              >
+                <mat-icon aria-hidden="true" fontIcon="delete" />
+              </button>
+            }
             <button
               type="button"
               class="ok-btn-outline !px-3 tab:hidden"

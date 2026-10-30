@@ -1014,6 +1014,22 @@ export class PgSocialRepository {
     return row ? { mimeType: row.mime_type, data: row.data } : null;
   }
 
+  /** Só o dono exclui. O resto cai em cascata; o feed guarda só a chave do item. */
+  async deleteCommunity(userId: string, communityId: string): Promise<ActionResult> {
+    const access = await this.communityOwnership(userId, communityId);
+    if (access !== 'ok') return access;
+    await this.db.query(
+      `with removed as (delete from app.communities where id = $1 returning id),
+            likes as (delete from app.feed_likes f using removed r
+                       where f.item_key like 'comunidades:' || r.id || ':%'),
+            comments as (delete from app.feed_comments f using removed r
+                          where f.item_key like 'comunidades:' || r.id || ':%')
+       select 1`,
+      [communityId],
+    );
+    return 'ok';
+  }
+
   private async communityOwnership(userId: string, communityId: string): Promise<ActionResult> {
     const { rows } = await this.db.query<{ owner_id: string }>(
       'select owner_id from app.communities where id = $1',

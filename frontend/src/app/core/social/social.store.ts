@@ -646,6 +646,17 @@ export class SocialStore {
     await this.load();
   }
 
+  /** Exclui a comunidade de vez (só o dono) e a tira das listas. */
+  async deleteCommunity(slug: string): Promise<boolean> {
+    const community = this.communityById(slug);
+    if (!community) return false;
+    const ok = await this.send(`/communities/${community.dbId}/delete`, undefined, undefined, false);
+    if (!ok) return false;
+    this.communitiesState.update((list) => list.filter((c) => c.id !== slug));
+    await this.load();
+    return true;
+  }
+
   toggleMembership(id: string): void {
     const community = this.communityById(id);
     if (!community) return;

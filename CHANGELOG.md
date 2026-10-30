@@ -7,11 +7,13 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Adicionado
 
-- **Foto da comunidade**: o dono adiciona, troca ou remove a imagem pela câmera na capa; ela
-  aparece na página, na lista de comunidades, no Início e nos Feeds. Exige a migration
-  `004_community_photos`.
-- **Música do perfil**: link do YouTube e nome da música em Editar perfil; o botão ♪ toca em
-  um mini player visível, sem carregar nada do YouTube antes do clique.
+- **Excluir comunidade**: o dono apaga a comunidade depois de confirmar em um modal; tópicos,
+  enquetes, eventos, membros, foto e itens do feed vão junto.
+- **Foto da comunidade**: já pode ser escolhida no formulário de criação; depois, o dono
+  adiciona, troca ou remove pela câmera na capa. Aparece na página, na lista de comunidades,
+  no Início e nos Feeds. Exige a migration `004_community_photos`.
+- **Música do perfil**: o botão ♪ abre um modal para colar o link do YouTube e o nome da
+  música; ao salvar, ela toca em um mini player visível. Nada do YouTube carrega antes disso.
 - **Fotos grandes** são reduzidas no navegador antes do envio (limite de 4,5 MB da Vercel).
 - **Deploy na Vercel** em um único projeto: Angular estático + Express como Serverless
   Function (`api/index.mjs`), com fallback de SPA e cabeçalhos de segurança; passo a passo

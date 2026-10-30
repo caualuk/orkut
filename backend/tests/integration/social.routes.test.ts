@@ -32,6 +32,7 @@ function fakeRepository() {
     setCommunityPhoto: vi.fn(async () => 'ok'),
     removeCommunityPhoto: vi.fn(async () => 'ok'),
     getCommunityPhoto: vi.fn(async () => null),
+    deleteCommunity: vi.fn(async () => 'ok'),
     toggleFeedLike: vi.fn(async () => {}),
     commentOnFeed: vi.fn(async () => {}),
   };
@@ -187,6 +188,20 @@ describe('Rotas /api/social', () => {
       .get(`/api/social/communities/${FRIEND}/photo`)
       .set('Cookie', cookie);
     expect(missing.status).toBe(404);
+  });
+
+  it('excluir comunidade: só o dono, e 404 quando não existe', async () => {
+    const remove = () =>
+      request(ctx.app)
+        .post(`/api/social/communities/${FRIEND}/delete`)
+        .set('Origin', TEST_ORIGIN)
+        .set('Cookie', cookie);
+
+    expect((await remove()).status).toBe(204);
+    repo.deleteCommunity.mockResolvedValueOnce('forbidden');
+    expect((await remove()).status).toBe(403);
+    repo.deleteCommunity.mockResolvedValueOnce('not-found');
+    expect((await remove()).status).toBe(404);
   });
 
   it('comunidade: gera o slug a partir do nome e tenta sufixos quando já existe', async () => {

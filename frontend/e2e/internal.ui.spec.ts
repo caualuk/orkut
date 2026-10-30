@@ -236,19 +236,68 @@ test('Comunidades: o dono adiciona e remove a foto', async ({ page }) => {
   await expect(page.locator('.badge img')).toHaveCount(0);
 });
 
-test('Música do perfil: valida o link, salva e toca no mini player', async ({ page, isMobile }) => {
+test('Comunidades: já escolhe a foto ao criar', async ({ page }) => {
+  await page.goto('/comunidades');
+  await page.getByTestId('create-community').click();
+  await page.getByTestId('form-photo').setInputFiles({
+    name: 'nota.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('não é imagem'),
+  });
+  await expect(page.getByText('Use uma imagem JPG ou PNG de até 10 MB.')).toBeVisible();
+
+  await page.getByTestId('form-photo').setInputFiles({
+    name: 'capa.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgo=', 'base64'),
+  });
+  await page.getByTestId('form-name').fill('Foto na criação');
+  await page.getByTestId('form-category').fill('Turismo');
+  await page.getByTestId('form-submit').click();
+
+  await expect(page).toHaveURL(/\/comunidades\/foto-na-criacao$/);
+  await expect(page.locator('.badge img')).toHaveAttribute('src', /\/communities\/.+\/photo\?v=/);
+});
+
+test('Comunidades: o dono exclui depois de confirmar no modal', async ({ page }) => {
+  await page.goto('/comunidades');
+  await page.getByTestId('create-community').click();
+  await page.getByTestId('form-name').fill('Vai ser excluída');
+  await page.getByTestId('form-category').fill('Testes');
+  await page.getByTestId('form-submit').click();
+  await expect(page).toHaveURL(/\/comunidades\/vai-ser-excluida$/);
+
+  await page.getByTestId('delete-community').click();
+  await page.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/comunidades\/vai-ser-excluida$/);
+  expect(social.requests.some((r) => r.path.endsWith('/delete'))).toBe(false);
+
+  await page.getByTestId('delete-community').click();
+  await expect(page.getByRole('dialog')).toContainText('Vai ser excluída');
+  await page.getByTestId('confirm-dialog-confirm').click();
+
+  await expect(page).toHaveURL(/\/comunidades$/);
+  await expect(page.getByText('Comunidade excluída.')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Vai ser excluída/ })).toHaveCount(0);
+});
+
+test('Música do perfil: o ♪ abre o modal, salva, toca e remove', async ({ page }) => {
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body: '<title>video</title>' }),
   );
-  await page.goto('/perfil/editar');
+  await page.goto('/home');
+  await page.getByTestId('music-toggle').click();
+  await expect(page.getByTestId('music-save')).toBeDisabled();
 
   await page.getByTestId('music-url').fill('https://evil.example/watch?v=dQw4w9WgXcQ');
   await expect(page.getByText('Cole o link de um vídeo do YouTube.')).toBeVisible();
+  await expect(page.getByTestId('music-save')).toBeDisabled();
 
   await page.getByTestId('music-url').fill('https://youtu.be/dQw4w9WgXcQ');
   await page.getByTestId('music-title').fill('Anna Júlia');
-  await page.getByTestId(isMobile ? 'save-profile-mobile' : 'save-profile').click();
-  await expect(page.getByText('Perfil atualizado!')).toBeVisible();
+  await page.getByTestId('music-save').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(social.requests).toContainEqual(
     expect.objectContaining({
       path: '/profile',
@@ -258,8 +307,6 @@ test('Música do perfil: valida o link, salva e toca no mini player', async ({ p
     }),
   );
 
-  await expect(page.getByTestId('music-player')).toHaveCount(0);
-  await page.getByTestId('music-toggle').click();
   const player = page.getByTestId('music-player');
   await expect(player).toContainText('Anna Júlia');
   await expect(player.locator('iframe')).toHaveAttribute(
@@ -267,8 +314,18 @@ test('Música do perfil: valida o link, salva e toca no mini player', async ({ p
     /youtube-nocookie\.com\/embed\/dQw4w9WgXcQ\?autoplay=1/,
   );
 
-  await page.getByTestId('music-close').click();
+  await page.getByTestId('music-toggle').click();
+  await expect(page.getByTestId('music-url')).toHaveValue('https://youtu.be/dQw4w9WgXcQ');
+  await page.getByTestId('music-stop').click();
   await expect(player).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByTestId('music-toggle').click();
+  await page.getByTestId('music-remove').click();
+  await expect(page.getByText('Música removida do perfil.')).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByTestId('music-toggle').click();
+  await expect(page.getByTestId('music-url')).toHaveValue('');
 });
 
 test('Editar perfil: sem a aba Pessoal e salvar atualiza o nome', async ({ page, isMobile }) => {

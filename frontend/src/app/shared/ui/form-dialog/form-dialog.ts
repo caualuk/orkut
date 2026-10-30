@@ -1,10 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { IMAGE_RULES_MESSAGE, isAcceptedImage } from '../../../core/social/image-upload';
 
 export interface FormDialogField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'datetime-local';
+  type: 'text' | 'textarea' | 'select' | 'datetime-local' | 'image';
   required?: boolean;
   maxLength?: number;
   minLength?: number;
@@ -12,6 +21,8 @@ export interface FormDialogField {
   hint?: string;
   options?: { value: string; label: string }[];
   value?: string;
+  /** Campo `image`: o arquivo não cabe no resultado de texto, então sai por aqui. */
+  onImage?: (file: File | null) => void;
 }
 
 export interface FormDialogData {
@@ -29,11 +40,11 @@ export type FormDialogResult = Record<string, string>;
 @Component({
   selector: 'ok-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule],
+  imports: [MatDialogModule, MatIconModule],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <form (submit)="$event.preventDefault(); submit()" novalidate>
-      <mat-dialog-content class="flex flex-col gap-4 !pt-2">
+      <mat-dialog-content class="!flex flex-col gap-4 !pt-2">
         @for (field of data.fields; track field.key; let first = $first) {
           <div>
             <label class="ok-label" [for]="'form-' + field.key">
@@ -53,6 +64,43 @@ export type FormDialogResult = Record<string, string>;
                   (input)="set(field.key, $any($event.target).value)"
                   [attr.data-testid]="'form-' + field.key"
                 ></textarea>
+              }
+              @case ('image') {
+                <div class="flex items-center gap-3">
+                  @if (preview(); as url) {
+                    <img [src]="url" alt="" class="size-14 rounded-2xl object-cover" />
+                  } @else {
+                    <span
+                      class="grid size-14 place-items-center rounded-2xl bg-surface-variant text-ink-secondary"
+                      aria-hidden="true"
+                    >
+                      <mat-icon fontIcon="add_a_photo" />
+                    </span>
+                  }
+                  <label class="ok-btn-tonal cursor-pointer focus-within:outline-2">
+                    <input
+                      [id]="'form-' + field.key"
+                      type="file"
+                      class="sr-only"
+                      accept="image/png,image/jpeg"
+                      (change)="pick(field, $any($event.target))"
+                      [attr.data-testid]="'form-' + field.key"
+                    />
+                    {{ preview() ? 'Trocar imagem' : 'Escolher imagem' }}
+                  </label>
+                  @if (preview()) {
+                    <button
+                      type="button"
+                      class="cursor-pointer text-[13px] font-bold text-danger"
+                      (click)="clear(field)"
+                    >
+                      Remover
+                    </button>
+                  }
+                </div>
+                @if (imageError()) {
+                  <p class="mt-1 text-xs text-danger" role="alert">{{ imageError() }}</p>
+                }
               }
               @case ('select') {
                 <select
@@ -116,6 +164,14 @@ export class FormDialog {
     ),
   );
 
+  /** Prévia da imagem escolhida (`blob:`, liberada ao trocar ou fechar). */
+  protected readonly preview = signal<string | null>(null);
+  protected readonly imageError = signal('');
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.setPreview(null));
+  }
+
   protected readonly valid = computed(() =>
     this.data.fields.every((field) => {
       const value = (this.values()[field.key] ?? '').trim();
@@ -126,6 +182,30 @@ export class FormDialog {
 
   protected set(key: string, value: string): void {
     this.values.update((values) => ({ ...values, [key]: value }));
+  }
+
+  protected pick(field: FormDialogField, input: HTMLInputElement): void {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (!isAcceptedImage(file)) {
+      this.imageError.set(IMAGE_RULES_MESSAGE);
+      return;
+    }
+    this.imageError.set('');
+    this.setPreview(URL.createObjectURL(file));
+    field.onImage?.(file);
+  }
+
+  protected clear(field: FormDialogField): void {
+    this.setPreview(null);
+    field.onImage?.(null);
+  }
+
+  private setPreview(url: string | null): void {
+    const previous = this.preview();
+    if (previous) URL.revokeObjectURL(previous);
+    this.preview.set(url);
   }
 
   protected submit(): void {

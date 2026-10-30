@@ -1,6 +1,13 @@
 /** Acima disso a Vercel recusa a requisição (limite de 4,5 MB por função). */
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const MAX_DIMENSION = 1920;
+/** Limite do que aceitamos escolher; o que passar de 4 MB é reduzido antes do envio. */
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+export const IMAGE_RULES_MESSAGE = 'Use uma imagem JPG ou PNG de até 10 MB.';
+
+export const isAcceptedImage = (file: File): boolean =>
+  /^image\/(png|jpeg)$/.test(file.type) && file.size <= MAX_IMAGE_BYTES;
 
 /**
  * Reduz no navegador as imagens grandes demais para enviar à API (JPEG, até

@@ -263,6 +263,11 @@ export function createSocialRouter({ repository, requireAuth }: SocialRouterDeps
   router.get('/communities/:id/photo', async (req, res) => {
     sendImage(res, await repository.getCommunityPhoto(param(req, 'id')));
   });
+  router.post('/communities/:id/delete', async (req, res) => {
+    const result = await repository.deleteCommunity(me(res), param(req, 'id'));
+    if (result === 'forbidden') throw AppError.forbidden('Só o dono pode excluir a comunidade.');
+    done(res, result);
+  });
   router.post('/communities/:id/join', async (req, res) => {
     done(res, await repository.joinCommunity(me(res), param(req, 'id')));
   });

@@ -86,6 +86,7 @@ nada de dados de exemplo. Leitura em um único `GET /state`; ações em `POST` (
 | Feed         | `POST /status`, `/feed/like`, `/feed/comment`                                                                                                                              | status, fotos novas, comunidades e amizades dos amigos         |
 | Comunidades  | `POST /communities` (criar), `/communities/search`, `GET /communities/:slug`, `/communities/:id/{join,leave,topics,polls,events}`, `/polls/:id/vote`, `/events/:id/attend` | só membros publicam/votam; voto único; dono não sai            |
 | Foto da comunidade | `POST /communities/:id/photo` (JPG/PNG cru ≤ 5 MB), `…/photo/remove`, `GET /communities/:id/photo`                                                                         | só o dono altera; imagem conferida por _magic bytes_           |
+| Excluir comunidade | `POST /communities/:id/delete`                                                                                                                                          | só o dono; apaga em cascata e limpa os itens do feed           |
 
 ### Banco de dados
 
