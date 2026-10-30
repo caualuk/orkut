@@ -39,9 +39,9 @@ Em _Settings → Environment Variables_ (a Vercel já define `NODE_ENV=productio
 | `SESSION_TTL_HOURS`     | opcional (padrão 12)                                                                                                                                                       |
 | `SESSION_REMEMBER_DAYS` | opcional (padrão 30)                                                                                                                                                       |
 
-> `CORS_ORIGINS` também alimenta a verificação de Origin: sem o domínio exato do site, todo
-> `POST` (login, cadastro…) responde `403`. URLs de preview da Vercel têm outro domínio;
-> inclua-as se quiser testar por lá.
+> `CORS_ORIGINS` também alimenta a verificação de Origin. Os domínios do próprio deploy na
+> Vercel (produção, branch e URL do deploy) já são aceitos automaticamente; só é preciso
+> listar aqui outros domínios que chamem a API.
 
 Depois de mudar variáveis, faça **Redeploy**: elas só valem para novos deploys.
 

@@ -46,6 +46,26 @@ describe('loadConfig', () => {
     expect(config.corsOrigins).toEqual(['https://a.com', 'https://b.com']);
   });
 
+  it('ignora a barra final das origens', () => {
+    const config = loadConfig({ ...base, CORS_ORIGINS: 'https://a.com/' });
+    expect(config.corsOrigins).toEqual(['https://a.com']);
+  });
+
+  it('aceita os domínios do próprio deploy na Vercel, sem repetir', () => {
+    const config = loadConfig({
+      ...base,
+      CORS_ORIGINS: 'https://orkut.vercel.app',
+      VERCEL_URL: 'orkut-abc123.vercel.app',
+      VERCEL_BRANCH_URL: 'orkut-git-main.vercel.app',
+      VERCEL_PROJECT_PRODUCTION_URL: 'orkut.vercel.app',
+    });
+    expect(config.corsOrigins).toEqual([
+      'https://orkut.vercel.app',
+      'https://orkut-abc123.vercel.app',
+      'https://orkut-git-main.vercel.app',
+    ]);
+  });
+
   it('falha sem DATABASE_URL', () => {
     expect(() => loadConfig({})).toThrow(/DATABASE_URL/);
   });

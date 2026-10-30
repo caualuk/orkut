@@ -15,7 +15,7 @@ const envSchema = z.object({
     .transform((value) =>
       value
         .split(',')
-        .map((origin) => origin.trim())
+        .map((origin) => origin.trim().replace(//+$/, ''))
         .filter(Boolean),
     ),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
@@ -52,6 +52,17 @@ export interface AppConfig {
   };
 }
 
+/**
+ * Domínios do próprio deploy, informados pela Vercel em tempo de execução: a API
+ * roda na mesma origem do site, então eles são sempre confiáveis. Domínios de
+ * outros sites continuam precisando estar em CORS_ORIGINS.
+ */
+function vercelOrigins(source: NodeJS.ProcessEnv): string[] {
+  return [source['VERCEL_URL'], source['VERCEL_BRANCH_URL'], source['VERCEL_PROJECT_PRODUCTION_URL']]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => `https://${host}`);
+}
+
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   const parsed = envSchema.safeParse(source);
   if (!parsed.success) {
@@ -67,7 +78,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     env: env.NODE_ENV,
     isProduction,
     port: env.PORT,
-    corsOrigins: env.CORS_ORIGINS,
+    corsOrigins: [...new Set([...env.CORS_ORIGINS, ...vercelOrigins(source)])],
     trustProxy: env.TRUST_PROXY,
     database: {
       url: env.DATABASE_URL,
