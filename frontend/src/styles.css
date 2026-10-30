@@ -88,6 +88,28 @@
     outline: 3px solid var(--color-primary);
     outline-offset: 2px;
   }
+
+  /*
+   * Sem cursor de texto piscando em conteúdo estático (ex.: ao clicar num título
+   * ou num elemento com tabindex): o caret só aparece onde dá para digitar.
+   */
+  body {
+    caret-color: transparent;
+  }
+
+  input,
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable='false']) {
+    caret-color: var(--color-primary);
+  }
+}
+
+@layer utilities {
+  /* Variante preenchida dos Material Symbols (ex.: coração de "Curtir"). */
+  .icon-filled {
+    font-variation-settings: 'FILL' 1;
+  }
 }
 
 /*
