@@ -151,6 +151,9 @@ describe('AuthService', () => {
       password: 'saudade2004',
       birthDate: '1995-03-12',
       gender: 'feminino' as const,
+      relationship: 'solteiro' as const,
+      city: 'São Paulo, SP',
+      about: 'Fã de café.',
     };
 
     it('cria o usuário com hash da senha e inicia sessão não persistente', async () => {

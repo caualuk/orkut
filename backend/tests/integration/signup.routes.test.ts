@@ -9,6 +9,9 @@ const VALID_SIGNUP = {
   password: 'saudade2004',
   birthDate: '1995-03-12',
   gender: 'feminino',
+  relationship: 'solteiro',
+  city: 'São Paulo, SP',
+  about: 'Fã de café e de scraps.',
   acceptTerms: true,
 };
 
@@ -53,11 +56,36 @@ describe('POST /api/auth/signup', () => {
     expect(created?.gender).toBe('feminino');
   });
 
-  it('aceita nascimento e sexo ausentes', async () => {
-    const res = await postSignup({ ...VALID_SIGNUP, birthDate: undefined, gender: undefined });
+  it('repassa os dados de perfil das etapas 1 e 2 (relacionamento, cidade, descrição)', async () => {
+    await postSignup({ ...VALID_SIGNUP, city: '  Recife, PE ', about: '  Oi!  ' });
+
+    expect(ctx.repository.created[0]).toMatchObject({
+      firstName: 'Nina',
+      lastName: 'Costa',
+      relationship: 'solteiro',
+      city: 'Recife, PE',
+      about: 'Oi!',
+    });
+  });
+
+  it('aceita campos opcionais ausentes com padrões seguros', async () => {
+    const res = await postSignup({
+      ...VALID_SIGNUP,
+      birthDate: undefined,
+      gender: undefined,
+      relationship: undefined,
+      city: undefined,
+      about: undefined,
+    });
 
     expect(res.status).toBe(201);
-    expect(ctx.repository.created[0]).toMatchObject({ birthDate: null, gender: null });
+    expect(ctx.repository.created[0]).toMatchObject({
+      birthDate: null,
+      gender: null,
+      relationship: 'nao-informar',
+      city: '',
+      about: '',
+    });
   });
 
   it('normaliza e-mail e nomes', async () => {
@@ -88,6 +116,9 @@ describe('POST /api/auth/signup', () => {
     ['nome vazio', { firstName: '   ' }, 'firstName'],
     ['termos não aceitos', { acceptTerms: false }, 'acceptTerms'],
     ['sexo fora da lista', { gender: 'robô' }, 'gender'],
+    ['relacionamento fora da lista', { relationship: 'complicado' }, 'relationship'],
+    ['cidade longa demais', { city: 'x'.repeat(81) }, 'city'],
+    ['descrição longa demais', { about: 'x'.repeat(501) }, 'about'],
     ['data inválida', { birthDate: '1995-02-30' }, 'birthDate'],
     ['menor de 13 anos', { birthDate: new Date().toISOString().slice(0, 10) }, 'birthDate'],
   ])('rejeita %s com 400', async (_case, override, field) => {

@@ -117,6 +117,9 @@ describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
       password: 'senha-teste-123',
       birthDate: '1994-03-12',
       gender: 'masculino' as const,
+      relationship: 'namorando' as const,
+      city: 'Recife, PE',
+      about: 'Teste de cadastro em etapas.',
     };
     const { user, token } = await service.signup(input, ctx);
     expect(user.displayName).toBe('Cadastro Teste');
@@ -129,6 +132,19 @@ describe.skipIf(!hasDatabase)('PgAuthRepository (PostgreSQL)', () => {
       [user.id],
     );
     expect(rows[0]).toEqual({ birth: '1994-03-12', gender: 'masculino', terms: true });
+
+    // O perfil nasce no mesmo comando do usuário.
+    const profile = await db.query(
+      'select first_name, last_name, relationship, city, about from app.profiles where user_id = $1',
+      [user.id],
+    );
+    expect(profile.rows[0]).toEqual({
+      first_name: 'Cadastro',
+      last_name: 'Teste',
+      relationship: 'namorando',
+      city: 'Recife, PE',
+      about: 'Teste de cadastro em etapas.',
+    });
 
     await expect(service.signup(input, ctx)).rejects.toMatchObject({ code: 'EMAIL_TAKEN' });
   });
