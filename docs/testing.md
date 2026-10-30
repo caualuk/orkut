@@ -4,10 +4,10 @@
 
 | Suíte                                            | Ferramenta                                | Testes | Resultado                       |
 | ------------------------------------------------ | ----------------------------------------- | ------ | ------------------------------- |
-| Backend · unitários, integração HTTP e segurança | Vitest + Supertest                        | 87     | ✅ 87 passaram                  |
-| Backend · banco real (Supabase)                  | Vitest + pg                               | 16     | ⏸ requer migration 003 aplicada* |
-| Frontend · unitários                             | Vitest (Angular unit-test builder, jsdom) | 79     | ✅ 79 passaram                  |
-| E2E · UI com API simulada (login, cadastro, telas internas) | Playwright (desktop 1440 e mobile 390) | 108 | ✅ 105 passaram · 3 pulados** |
+| Backend · unitários, integração HTTP e segurança | Vitest + Supertest                        | 95     | ✅ 95 passaram                  |
+| Backend · banco real (Supabase)                  | Vitest + pg                               | 17     | ✅ 17 passaram*                 |
+| Frontend · unitários                             | Vitest (Angular unit-test builder, jsdom) | 81     | ✅ 81 passaram                  |
+| E2E · UI com API simulada (login, cadastro, telas internas) | Playwright (desktop 1440 e mobile 390) | 110 | ✅ 107 passaram · 3 pulados** |
 | E2E · full-stack real                            | Playwright                                | —      | ⏸ requer `backend/.env`*        |
 | Lint                                             | ESLint / angular-eslint                   | —      | ✅ sem erros                    |
 | Dependências                                     | `npm audit`                               | —      | ✅ 0 vulnerabilidades           |
