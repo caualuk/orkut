@@ -3,6 +3,36 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Adicionado
+
+- **API social com dados reais** (`/api/social`) e migration `003_social`: perfil, foto,
+  amizades, recados, mensagens, depoimentos, álbuns e fotos, status, feed com curtidas e
+  comentários, comunidades (criação, tópicos, enquetes, eventos) e preferências — tudo
+  persistido no PostgreSQL e restrito por regras de amizade/visibilidade no SQL.
+- **Comunidades**: página `/comunidades` (minhas, descobrir, busca) e botão **Criar
+  comunidade**; criar enquete e evento dentro da comunidade.
+- **Amigos**: busca de qualquer membro pelo nome com **+ Adicionar**; a busca global
+  sempre oferece procurar o termo entre todas as pessoas.
+- **Feeds**: publicar status; **curtidas e comentários animados** (coração em mola com
+  partículas e contador que rola; comentário novo que cresce e brilha).
+- **Favicon** com a letra "o" do logotipo (Poppins Bold vetorizada, gradiente da marca),
+  além de `apple-touch-icon` e ícones 192/512.
+
+### Alterado
+
+- O frontend deixou de usar dados de demonstração: `social.seed.ts` foi removido e o
+  `SocialStore` passou a carregar e salvar tudo na API (sincroniza a cada 20 s).
+- Aniversários vêm da data de nascimento dos amigos (antes: "melhores amigos").
+- Recados escritos no próprio mural aparecem em "Enviados".
+- Cena do login sem pessoas fictícias ("Novo scrap", "seus fãs").
+- Editar perfil sem a aba **Pessoal** (por enquanto); a foto é enviada na hora.
+
+### Corrigido
+
+- Cursor de texto piscando ao clicar em conteúdo estático.
+
 ## [0.2.0] — 2026-10-29
 
 ### Adicionado

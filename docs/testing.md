@@ -1,19 +1,19 @@
 # Testes
 
-## Resumo (29/10/2026 · 0.2.0)
+## Resumo (29/10/2026 · dados reais)
 
 | Suíte                                            | Ferramenta                                | Testes | Resultado                       |
 | ------------------------------------------------ | ----------------------------------------- | ------ | ------------------------------- |
-| Backend · unitários, integração HTTP e segurança | Vitest + Supertest                        | 77     | ✅ 77 passaram                  |
-| Backend · banco real (Supabase)                  | Vitest + pg                               | 6      | ⏸ requer `backend/.env`*        |
-| Frontend · unitários                             | Vitest (Angular unit-test builder, jsdom) | 78     | ✅ 78 passaram                  |
-| E2E · UI com API simulada (login, cadastro, telas internas) | Playwright (desktop 1440 e mobile 390) | 102 | ✅ 100 passaram · 2 pulados** |
+| Backend · unitários, integração HTTP e segurança | Vitest + Supertest                        | 87     | ✅ 87 passaram                  |
+| Backend · banco real (Supabase)                  | Vitest + pg                               | 16     | ⏸ requer migration 003 aplicada* |
+| Frontend · unitários                             | Vitest (Angular unit-test builder, jsdom) | 79     | ✅ 79 passaram                  |
+| E2E · UI com API simulada (login, cadastro, telas internas) | Playwright (desktop 1440 e mobile 390) | 108 | ✅ 105 passaram · 3 pulados** |
 | E2E · full-stack real                            | Playwright                                | —      | ⏸ requer `backend/.env`*        |
 | Lint                                             | ESLint / angular-eslint                   | —      | ✅ sem erros                    |
 | Dependências                                     | `npm audit`                               | —      | ✅ 0 vulnerabilidades           |
 
 \* Suítes que dependem do Supabase rodam com `backend/.env` preenchido (não versionado).
-\*\* "Ordem de foco" roda só no desktop e "drawer" só no mobile.
+\*\* "Ordem de foco" e "aniversário na lateral" rodam só no desktop; "drawer" só no mobile.
 
 ## Como executar
 
@@ -85,6 +85,30 @@ Os E2E full-stack usam o usuário do seed (`SEED_USER_EMAIL`/`SEED_USER_PASSWORD
   validações, medidor de senha, sucesso → Home e `409`.
 
 Além dos testes, as telas foram comparadas com os frames do design em 1440, 834 e 390.
+
+### Rede social com dados reais
+
+- **Backend · rotas** (`social.routes.test.ts`, repositório falso): sessão obrigatória,
+  CSRF (Origin), normalização do texto (espaços e caracteres de controle), limites,
+  perfil parcial e _strict_ (sem _mass assignment_), preferências mescladas, upload
+  aceitando só PNG/JPEG verdadeiros (SVG disfarçado → 400), ids inválidos nunca chegam ao
+  banco, slug de comunidade com sufixo em colisão, chaves do feed validadas.
+- **Backend · banco real** (`pg-social.repository.test.ts`, 2 usuários temporários):
+  perfil criado a partir da conta e vazio, recados/mensagens só entre amigos, pedido →
+  aceite sem duplicar par, recado com resposta/curtida/leitura/exclusão, conversa e não
+  lidas, depoimento pendente → aprovado, visibilidade das fotos por álbum, feed com
+  curtida e comentário, comunidade (criar, entrar, tópico, enquete com voto único, dono
+  não sai), busca tratando `%` como texto.
+- **Frontend · unitários**: `SocialStore` sobre HTTP (mapeamento, contadores, ação
+  otimista + POST + recarga, curtida sem recarga, erro da API restaura o estado,
+  comentário marcado para animar, limpeza no logout), formatação de datas/iniciais/números,
+  `LikeButton` (alternância, salto, partículas, contador) e `CommentThread` (recolher,
+  expandir, envio aparado, entrada animada).
+- **E2E** com API social simulada em memória (`e2e/support/mock-social-api.ts`): conta
+  nova sem nada fictício, recados, mensagens, depoimentos, feed (status, curtida e
+  comentário), aniversário pela data de nascimento, tema salvo na API, busca de pessoas e
+  pedido de amizade, criar comunidade e tópico, Editar perfil sem a aba Pessoal e sem
+  cursor de texto em conteúdo estático.
 
 ### E2E (Playwright)
 

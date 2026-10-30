@@ -61,6 +61,25 @@ O cadastro tem rate limit próprio (5 tentativas por janela, todas contam).
 
 Formato de erro: `{ "error": { "code": "INVALID_CREDENTIALS", "message": "...", "details"?: [...] } }`.
 
+#### API social (`/api/social`, sessão obrigatória)
+
+Tudo o que as telas internas mostram vem daqui — **pessoas e conteúdos reais** do banco,
+nada de dados de exemplo. Leitura em um único `GET /state`; ações em `POST` (respostas
+`204`, o frontend recarrega o estado). Regras de permissão ficam no próprio SQL.
+
+| Área          | Rotas                                                                                  | Regras                                                   |
+| ------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Estado        | `GET /state`                                                                           | perfil, preferências, amigos, recados, conversas, feed…  |
+| Perfil        | `POST /profile` (parcial), `POST /profile/photo` (JPG/PNG cru ≤ 5 MB), `…/photo/remove`, `GET /users/:id/photo` | campos desconhecidos → 400; imagem conferida por *magic bytes* |
+| Preferências  | `POST /settings` (parcial, mesclado)                                                   | tema, privacidade, notificações                          |
+| Pessoas       | `POST /people/search`, `POST /friends/{request,cancel,accept,reject,remove,best,fan}`  | pedido invertido vira aceite; sem pares duplicados       |
+| Recados       | `POST /scraps`, `/scraps/:id/{reply,like,read,delete}`                                 | só entre amigos (ou no próprio mural)                    |
+| Mensagens     | `POST /conversations/:id/{messages,read}`                                              | só entre amigos                                          |
+| Depoimentos   | `POST /testimonials`, `/testimonials/:id/{approve,delete,like}`                        | só para amigos que aceitam; ficam pendentes até aprovar  |
+| Álbum         | `POST /albums`, `/albums/:id/{photos,delete}`, `GET /photos/:id`, `/photos/:id/delete` | foto só aparece para quem a visibilidade do álbum permite |
+| Feed          | `POST /status`, `/feed/like`, `/feed/comment`                                          | status, fotos novas, comunidades e amizades dos amigos   |
+| Comunidades   | `POST /communities` (criar), `/communities/search`, `GET /communities/:slug`, `/communities/:id/{join,leave,topics,polls,events}`, `/polls/:id/vote`, `/events/:id/attend` | só membros publicam/votam; voto único; dono não sai |
+
 ### Banco de dados
 
 Schema `app` (fora do `public`, portanto **não exposto** pela API REST automática do Supabase):
@@ -71,6 +90,15 @@ Schema `app` (fora do `public`, portanto **não exposto** pela API REST automát
 - `app.sessions` — `id`, `user_id` → users, `token_hash` (32 bytes, único), `user_agent`,
   `ip_address`, `created_at`, `expires_at`, `revoked_at`.
 - `app.schema_migrations` — controle de migrations.
+- **Rede social (migration 003)**: `profiles` (dados do perfil, preferências em `jsonb`,
+  `last_seen_at` para "online"), `profile_photos`, `profile_visits`, `fans`, `friendships`
+  (pedido/aceite, um par por amizade), `best_friends`, `scraps` (+ `scrap_likes`, respostas
+  via `reply_to_id`), `messages`, `testimonials` (+ `testimonial_likes`), `albums`, `photos`
+  (`bytea` ≤ 5 MB), `statuses`, `communities`, `community_members`, `community_topics`,
+  `topic_posts`, `community_polls`, `poll_votes`, `community_events`, `event_attendees`,
+  `feed_likes`, `feed_comments`. Funções `app.friend_ids`, `app.are_friends`,
+  `app.is_online` e `app.mutual_friends` (com `search_path` vazio). Tudo com
+  `on delete cascade` a partir de `app.users`.
 
 RLS habilitado em todas as tabelas e privilégios revogados das roles `anon`/`authenticated`.
 
@@ -100,9 +128,15 @@ src/app/
   compact < 600 (Top App Bar 56 + Navigation Bar + drawer modal), medium 600–1023
   (Navigation Rail 88 + título na Top App Bar) e expanded ≥ 1024 (pílulas + coluna de
   perfil + rodapé). Breakpoint `tab:` (600px) definido no `@theme`.
-- **Estado social em `SocialStore`** (signals). Toda mutação passa pelos métodos do
-  store; enquanto a API social não existe, o estado nasce de `social.seed.ts` (dados do
-  design) e vive na sessão do navegador. Trocar por HTTP não muda as telas.
+- **Estado social em `SocialStore`** (signals) sincronizado com `/api/social`: carrega o
+  `GET /state` ao entrar e a cada 20 s (aba visível), aplica as ações na tela na hora
+  (otimista), envia o `POST` e recarrega; se a API recusar, volta ao estado do servidor e
+  mostra a mensagem num snackbar. `social.api.ts` mapeia os DTOs para os modelos das
+  telas e `social.format.ts` formata datas ("há 2 h", "ontem"), iniciais e cores estáveis
+  por pessoa. Ao sair da conta, o store é limpo.
+- **Curtidas e comentários animados**: `LikeButton` (coração em mola, partículas e
+  contador que rola) e `CommentThread` (comentário novo cresce, desliza e brilha; envio
+  com o ícone "decolando"), ambos respeitando `prefers-reduced-motion`.
 - **Estilo**: Tailwind para layout/tokens (`@theme`), Material 3 para componentes
   (text field, checkbox, spinner, ripple, ícones) com overrides de tokens; CSS de
   componente apenas para efeitos 3D.
@@ -125,7 +159,8 @@ src/app/
 | `/depoimentos`     | `authGuard`  | Depoimentos                       |
 | `/configuracoes`   | `authGuard`  | Configurações                     |
 | `/amigos`          | `authGuard`  | Amigos (`?busca=`)                |
-| `/comunidades/:id` | `authGuard`  | Comunidade (`/comunidades` abre a principal) |
+| `/comunidades`     | `authGuard`  | Comunidades (minhas, descobrir, busca, criar) |
+| `/comunidades/:id` | `authGuard`  | Comunidade (fórum, enquetes, eventos, membros) |
 | `**`               | —            | 404                               |
 
 ## Fidelidade ao design
@@ -170,12 +205,11 @@ Itens do spec de movimento e componentes:
 
 ### Limitações conhecidas
 
-- **API social pendente**: recados, amigos, mensagens, depoimentos, álbuns, feeds,
-  comunidades e perfil usam o `SocialStore` em memória (dados do design). As ações
-  funcionam durante a sessão, mas não são salvas no servidor; ao recarregar, voltam ao
-  estado inicial. Só as preferências de Configurações (tema, privacidade) ficam no
-  `localStorage`, e apenas depois que o usuário muda algo.
-- **Fotos** (perfil, álbum, cadastro) são prévias locais (`URL.createObjectURL`) até
-  existir upload na API.
+- **Sem dados de demonstração**: uma conta nova vê as telas vazias (com convites para
+  adicionar amigos, publicar status ou criar comunidade) até haver atividade real.
+- **Visitas ao perfil** só passam a contar quando existir a página de perfil de outros
+  membros; até lá os contadores ficam em zero.
+- **Sincronização** por polling (20 s), sem WebSocket: mensagens novas aparecem em até
+  20 s.
 - **Desativar conta** pede confirmação e encerra a sessão; ocultar o perfil de fato
   depende da API.
