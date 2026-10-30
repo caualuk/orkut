@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import type { Tone } from '../../../core/social/social.models';
 
 /** Gradientes (luz superior esquerda) dos avatares e tiles 3D do design. */
@@ -35,7 +35,13 @@ export const TONE_GRADIENTS: Record<Tone, string> = {
     '[attr.aria-label]': 'label() || null',
     '[attr.aria-hidden]': 'label() ? null : "true"',
   },
-  template: `{{ initials() }}`,
+  template: `
+    @if (imageUrl(); as url) {
+      <img [src]="url" alt="" class="photo" loading="lazy" (error)="broken.set(true)" />
+    } @else {
+      {{ initials() }}
+    }
+  `,
   styles: `
     :host {
       display: inline-flex;
@@ -58,6 +64,16 @@ export const TONE_GRADIENTS: Record<Tone, string> = {
     :host(.avatar--round) {
       border-radius: 9999px;
     }
+
+    :host {
+      overflow: hidden;
+    }
+
+    .photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   `,
 })
 export class Avatar {
@@ -69,6 +85,10 @@ export class Avatar {
   readonly shape = input<'round' | 'tile'>('round');
   /** Nome para leitores de tela; vazio = decorativo. */
   readonly label = input('');
+  /** Foto real da pessoa; sem ela (ou se falhar ao carregar), o gradiente com iniciais. */
+  readonly src = input<string | null | undefined>(null);
 
+  protected readonly broken = signal(false);
+  protected readonly imageUrl = computed(() => (this.broken() ? null : (this.src() ?? null)));
   protected readonly background = computed(() => TONE_GRADIENTS[this.tone()]);
 }

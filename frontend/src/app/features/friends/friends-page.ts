@@ -3,6 +3,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -11,6 +13,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+import type { Suggestion } from '../../core/social/social.models';
 import { SocialStore } from '../../core/social/social.store';
 import { normalize } from '../../layout/global-search/global-search';
 import { Avatar } from '../../shared/ui/avatar/avatar';
@@ -36,6 +39,13 @@ export class FriendsPage {
 
   protected readonly term = linkedSignal(() => this.busca() ?? '');
   protected readonly filter = signal<FriendFilter>('todos');
+  /** Resultado da busca por pessoas reais (não amigos) com o termo digitado. */
+  private readonly found = signal<Suggestion[]>([]);
+  protected readonly searching = signal(false);
+  /** Com busca: quem não é amigo; sem busca (e sem amigos): as sugestões da API. */
+  protected readonly people = computed(() =>
+    this.term().trim() ? this.found().filter((p) => !p.friend) : this.store.suggestions(),
+  );
 
   protected readonly filters = computed(() => [
     { id: 'todos' as FriendFilter, label: 'Todos', count: this.store.friends().length },
@@ -69,6 +79,40 @@ export class FriendsPage {
     () =>
       `${this.store.friends().length} amigos · ${this.store.onlineFriends().length} online agora`,
   );
+
+  constructor() {
+    // Busca no servidor 300 ms depois da última tecla.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    inject(DestroyRef).onDestroy(() => clearTimeout(timer));
+    effect(() => {
+      const term = this.term().trim();
+      clearTimeout(timer);
+      if (term.length < 2) {
+        this.found.set([]);
+        return;
+      }
+      this.searching.set(true);
+      timer = setTimeout(async () => {
+        const people = await this.store.searchPeople(term);
+        if (this.term().trim() === term) this.found.set(people);
+        this.searching.set(false);
+      }, 300);
+    });
+  }
+
+  protected toggleRequest(person: Suggestion): void {
+    if (person.requested) {
+      this.store.cancelFriendRequest(person.id);
+    } else {
+      this.store.requestFriend(person.id);
+      this.snackBar.open(`Pedido de amizade enviado para ${person.shortName}.`, 'OK', {
+        duration: 3000,
+      });
+    }
+    this.found.update((list) =>
+      list.map((p) => (p.id === person.id ? { ...p, requested: !p.requested } : p)),
+    );
+  }
 
   protected async invite(): Promise<void> {
     const link = `${this.document.location.origin}/cadastro`;

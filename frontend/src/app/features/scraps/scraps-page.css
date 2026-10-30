@@ -133,3 +133,17 @@
   color: var(--color-surface);
   font-weight: 700;
 }
+.reply {
+  animation: ok-reply-in 400ms var(--ease-emphasized);
+}
+@keyframes ok-reply-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reply {
+    animation: none;
+  }
+}

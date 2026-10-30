@@ -44,6 +44,7 @@
         <div class="flex min-w-0 flex-1 items-center gap-4">
           <ok-avatar
             [tone]="item.tone"
+            [src]="item.photoUrl"
             [initials]="item.authorName.slice(0, 2)"
             shape="tile"
             [size]="52"
@@ -98,26 +99,22 @@
             {{ item.text }}
           </blockquote>
           <div class="mt-4 flex items-center gap-3">
-            <ok-avatar [tone]="item.tone" [size]="32" />
+            <ok-avatar [tone]="item.tone" [src]="item.photoUrl" [size]="32" />
             <p class="flex-1 text-[13px] font-bold text-ink-secondary">
               {{ item.status === 'enviado' ? 'Para ' + item.toName : item.authorName }} ·
               {{ item.date }}
             </p>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 text-xs font-bold text-primary-strong"
-              [attr.aria-pressed]="item.liked"
-              [attr.aria-label]="item.likes + ' curtidas — curtir depoimento'"
-              (click)="store.toggleTestimonialLike(item.id)"
-            >
-              <mat-icon
-                aria-hidden="true"
-                [fontIcon]="'favorite'"
-                class="!size-4 !text-base"
-                [class.opacity-60]="!item.liked"
+            @if (item.status === 'recebido') {
+              <ok-like-button
+                [liked]="item.liked"
+                [count]="item.likes"
+                [showLabel]="false"
+                [subject]="'o depoimento de ' + item.authorName"
+                (toggled)="store.toggleTestimonialLike(item.id)"
               />
-              {{ item.likes }}
-            </button>
+            } @else if (item.likes) {
+              <span class="text-xs font-bold text-primary-strong">♥ {{ item.likes }}</span>
+            }
           </div>
         </li>
       } @empty {

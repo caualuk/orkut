@@ -5,6 +5,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import type { Testimonial } from '../../core/social/social.models';
 import { SocialStore } from '../../core/social/social.store';
 import { Avatar } from '../../shared/ui/avatar/avatar';
+import { LikeButton } from '../../shared/ui/like-button/like-button';
 import {
   ComposeDialog,
   type ComposeDialogData,
@@ -18,7 +19,7 @@ type Tab = 'recebido' | 'enviado' | 'pendente';
 @Component({
   selector: 'ok-testimonials-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Avatar, MatIconModule, PageHeader],
+  imports: [Avatar, LikeButton, MatIconModule, PageHeader],
   templateUrl: './testimonials-page.html',
   styleUrl: './testimonials-page.css',
 })

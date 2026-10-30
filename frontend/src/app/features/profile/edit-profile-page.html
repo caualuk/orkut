@@ -257,26 +257,6 @@
             </div>
           </div>
         }
-        @case ('pessoal') {
-          <div class="grid gap-x-4 gap-y-5 tab:grid-cols-2" formGroupName="personal">
-            <div>
-              <label class="field-label" for="music">Músicas</label
-              ><input id="music" class="ok-input" formControlName="music" maxlength="200" />
-            </div>
-            <div>
-              <label class="field-label" for="movies">Filmes</label
-              ><input id="movies" class="ok-input" formControlName="movies" maxlength="200" />
-            </div>
-            <div>
-              <label class="field-label" for="books">Livros</label
-              ><input id="books" class="ok-input" formControlName="books" maxlength="200" />
-            </div>
-            <div>
-              <label class="field-label" for="passions">Paixões</label
-              ><input id="passions" class="ok-input" formControlName="passions" maxlength="200" />
-            </div>
-          </div>
-        }
       }
     </div>
   </div>
@@ -305,6 +285,6 @@
       data-testid="photo-upload"
     />
     <mat-icon aria-hidden="true" fontIcon="autorenew" class="!size-4 !text-base" />
-    Trocar foto
+    {{ uploading() ? 'Enviando…' : 'Trocar foto' }}
   </label>
 </ng-template>

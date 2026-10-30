@@ -39,6 +39,15 @@
             </button>
             <button
               type="button"
+              class="ok-btn-outline"
+              (click)="dialogs.createCommunity()"
+              data-testid="create-community"
+            >
+              <mat-icon aria-hidden="true" fontIcon="add" class="!size-4 !text-base" />
+              <span class="max-tab:sr-only">Criar comunidade</span>
+            </button>
+            <button
+              type="button"
               class="ok-btn-outline !px-3 tab:hidden"
               aria-label="Compartilhar comunidade"
               (click)="share()"
@@ -72,6 +81,8 @@
               <button
                 type="button"
                 class="ok-btn-tonal"
+                [disabled]="!community.joined"
+                [attr.title]="community.joined ? null : 'Participe para criar tópicos'"
                 (click)="newTopic()"
                 data-testid="new-topic"
               >
@@ -118,6 +129,18 @@
             </ul>
           }
           @case ('enquetes') {
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-ink">Enquetes ({{ community.polls.length }})</h2>
+              <button
+                type="button"
+                class="ok-btn-tonal"
+                [disabled]="!community.joined"
+                (click)="dialogs.createPoll(community.id)"
+                data-testid="new-poll"
+              >
+                + Nova enquete
+              </button>
+            </div>
             @for (poll of community.polls; track poll.id) {
               <fieldset class="mb-6 last:mb-0">
                 <legend class="mb-3 font-bold text-ink">{{ poll.question }}</legend>
@@ -128,7 +151,7 @@
                       type="button"
                       class="poll-option"
                       [class.poll-option--voted]="poll.votedIndex === index"
-                      [disabled]="poll.votedIndex !== null"
+                      [disabled]="poll.votedIndex !== null || !community.joined"
                       (click)="store.vote(community.id, poll.id, index)"
                     >
                       @if (poll.votedIndex !== null) {
@@ -152,6 +175,18 @@
             }
           }
           @case ('eventos') {
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-ink">Eventos ({{ community.events.length }})</h2>
+              <button
+                type="button"
+                class="ok-btn-tonal"
+                [disabled]="!community.joined"
+                (click)="dialogs.createEvent(community.id)"
+                data-testid="new-event"
+              >
+                + Novo evento
+              </button>
+            </div>
             <ul class="flex flex-col gap-3">
               @for (event of community.events; track event.id) {
                 <li class="flex items-center gap-4 rounded-2xl bg-surface-variant p-4">
@@ -164,6 +199,7 @@
                     type="button"
                     class="ok-btn-outline"
                     [attr.aria-pressed]="event.going"
+                    [disabled]="!community.joined"
                     (click)="store.toggleEventAttendance(community.id, event.id)"
                   >
                     {{ event.going ? 'Vou ✓' : 'Vou participar' }}
@@ -175,7 +211,10 @@
             </ul>
           }
           @case ('membros') {
-            <p class="mb-4 text-sm text-ink-secondary">{{ community.members }} membros</p>
+            <p class="mb-4 text-sm text-ink-secondary">
+              {{ community.members }} {{ community.memberCount === 1 ? 'membro' : 'membros' }} ·
+              amigos seus que participam:
+            </p>
             <ul class="grid grid-cols-3 gap-4 tab:grid-cols-4">
               @for (friend of memberFriends(); track friend.id) {
                 <li class="flex flex-col items-center gap-1.5 text-center">
@@ -202,7 +241,9 @@
     <aside class="flex flex-col gap-4 max-lg:hidden" aria-label="Sobre a comunidade">
       <section class="ok-card p-6">
         <h2 class="mb-3 text-lg font-bold text-ink">Sobre</h2>
-        <p class="text-sm leading-relaxed text-ink-secondary">{{ community.about }}</p>
+        <p class="text-sm leading-relaxed whitespace-pre-line text-ink-secondary">
+          {{ community.about || 'Sem descrição ainda.' }}
+        </p>
         <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1.5 text-xs text-ink-muted">
           <dt>Criada em</dt>
           <dd>{{ community.createdAt }}</dd>
@@ -235,11 +276,13 @@
               [label]="friend.name"
             />
           }
-          <span
-            class="grid size-11 place-items-center rounded-full bg-[#1c1b1f] text-[11px] font-bold text-white ring-[3px] ring-white"
-          >
-            +{{ community.members.split(' ')[0] }}
-          </span>
+          @if (community.memberCount > memberFriends().length) {
+            <span
+              class="grid size-11 place-items-center rounded-full bg-[#1c1b1f] text-[11px] font-bold text-white ring-[3px] ring-white"
+            >
+              +{{ community.memberCount - memberFriends().length }}
+            </span>
+          }
         </div>
         @if (community.friendsInside.length) {
           <p class="mt-4 text-[13px] text-ink-secondary">
@@ -268,12 +311,14 @@
       }
     </aside>
   </div>
+} @else if (loading()) {
+  <p class="ok-card p-10 text-center text-sm text-ink-muted" role="status">Carregando…</p>
 } @else {
   <section class="ok-card p-10 text-center">
     <h1 class="text-xl font-bold text-ink">Comunidade não encontrada</h1>
     <p class="mt-2 text-sm text-ink-secondary">
       Ela pode ter sido removida ou o endereço está incorreto.
     </p>
-    <a routerLink="/home" class="ok-btn-primary mt-6">Voltar para o início</a>
+    <a routerLink="/comunidades" class="ok-btn-primary mt-6">Ver comunidades</a>
   </section>
 }

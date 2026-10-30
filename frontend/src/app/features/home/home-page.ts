@@ -56,9 +56,14 @@ export class HomePage {
 
   protected readonly topCommunities = computed(() => this.store.myCommunities().slice(0, 3));
 
+  /** Amigos que fazem aniversário hoje (pela data de nascimento real). */
   protected readonly birthdayNames = computed(() => {
-    const [first, second] = this.store.friends().filter((f) => f.bestFriend);
-    return [first?.shortName, second?.shortName].filter(Boolean).join(' e ');
+    const names = this.store
+      .friends()
+      .filter((f) => f.birthdayToday)
+      .map((f) => f.shortName);
+    if (names.length <= 1) return names[0] ?? '';
+    return `${names.slice(0, -1).join(', ')} e ${names.at(-1)}`;
   });
 
   protected sendScrap(): void {

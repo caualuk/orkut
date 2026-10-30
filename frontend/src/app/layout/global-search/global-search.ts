@@ -7,7 +7,7 @@ import { SocialStore } from '../../core/social/social.store';
 import { Avatar } from '../../shared/ui/avatar/avatar';
 
 interface SearchResult {
-  kind: 'Amigo' | 'Comunidade';
+  kind: 'Amigo' | 'Comunidade' | 'Pessoas';
   label: string;
   detail: string;
   tone: Tone;
@@ -109,7 +109,16 @@ export class GlobalSearch {
         link: `/comunidades/${community.id}`,
       }));
 
-    return [...friends, ...communities].slice(0, MAX_RESULTS);
+    // Sempre oferece buscar o termo entre todos os membros (para adicionar amigos).
+    const everyone: SearchResult = {
+      kind: 'Pessoas',
+      label: `Buscar "${this.term().trim()}" no orkut`,
+      detail: 'todas as pessoas',
+      tone: 'gray',
+      link: '/amigos',
+      query: { busca: this.term().trim() },
+    };
+    return [...[...friends, ...communities].slice(0, MAX_RESULTS - 1), everyone];
   });
 
   protected submit(): void {

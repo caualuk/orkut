@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   signal,
@@ -10,6 +11,7 @@ import {
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SocialStore } from '../../core/social/social.store';
@@ -73,6 +75,21 @@ export class AppShell {
     // Aplica o tema salvo assim que a área logada abre.
     inject(ThemeService);
 
+    // Dados reais da API: carrega ao entrar e sincroniza em segundo plano.
+    this.store.startSync();
+    inject(DestroyRef).onDestroy(() => this.store.stopSync());
+
+    // Falhas de ações (ex.: recado para quem não é amigo) aparecem num snackbar.
+    const snackBar = inject(MatSnackBar);
+    effect(() => {
+      const message = this.store.lastError();
+      if (!message) return;
+      untracked(() => {
+        snackBar.open(message, 'OK', { duration: 5000 });
+        this.store.clearError();
+      });
+    });
+
     // Fecha drawer e busca mobile a cada navegação.
     effect(() => {
       this.url();
@@ -99,6 +116,7 @@ export class AppShell {
     if (this.loggingOut()) return;
     this.loggingOut.set(true);
     // Mesmo se a API falhar, o estado local já foi limpo: volta ao login.
+    this.store.reset();
     const done = () => void this.router.navigateByUrl('/login');
     this.auth.logout().subscribe({ complete: done, error: done });
   }

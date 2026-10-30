@@ -35,25 +35,27 @@ export class AlbumPage {
     this.creating.set(true);
   }
 
-  protected create(): void {
+  protected async create(): Promise<void> {
     const title = this.newTitle().trim();
     if (!title) return;
-    this.store.createAlbum(title, this.newVisibility());
+    const id = await this.store.createAlbum(title, this.newVisibility());
+    if (!id) return;
     this.newTitle.set('');
     this.newVisibility.set('somente-eu');
     this.creating.set(false);
     this.snackBar.open(`Álbum "${title}" criado!`, 'OK', { duration: 3000 });
   }
 
-  protected onFiles(files: FileList | null): void {
+  /** Sem álbum escolhido, as fotos vão para o primeiro (ou para "Minhas fotos"). */
+  protected async onFiles(files: FileList | null, albumId?: string): Promise<void> {
     this.dragging.set(false);
     if (!files?.length) return;
 
-    const added = this.store.addPhotos(Array.from(files));
-    const rejected = files.length - added;
-    const message = added
-      ? `${added} foto(s) adicionada(s) às fotos recentes.`
-      : 'Nenhuma foto adicionada.';
+    const total = files.length;
+    this.snackBar.open('Enviando fotos…', undefined, { duration: 2000 });
+    const added = await this.store.addPhotos(Array.from(files), albumId);
+    const rejected = total - added;
+    const message = added ? `${added} foto(s) adicionada(s).` : 'Nenhuma foto adicionada.';
     this.snackBar.open(rejected ? `${message} Use JPG ou PNG de até 5 MB.` : message, 'OK', {
       duration: 4000,
     });

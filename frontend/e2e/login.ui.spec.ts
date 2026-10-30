@@ -32,13 +32,13 @@ test.describe('Tela de login · renderização', () => {
       await expect(page.getByText('Que bom te ver de novo! Acesse sua conta.')).toBeHidden();
     } else {
       await expect(eyebrow).toBeVisible();
-      await expect(page.getByText('Lucas Braga')).toBeVisible();
+      await expect(page.getByText('Novo scrap')).toBeVisible();
     }
   });
 
   test('a cena 3D é decorativa e não aparece na árvore de acessibilidade', async ({ page }) => {
     await expect(page.locator('ok-login-scene')).toHaveAttribute('aria-hidden', 'true');
-    await expect(page.getByRole('heading', { name: 'Lucas Braga' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Novo scrap' })).toHaveCount(0);
   });
 
   test('não tem violações de acessibilidade (axe · WCAG 2.1 AA)', async ({ page }) => {

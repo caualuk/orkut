@@ -1,0 +1,159 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.more {
+  align-self: flex-start;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-secondary);
+}
+
+.more:hover {
+  color: var(--color-primary-strong);
+  text-decoration: underline;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Linha que cresce de altura 0 até o conteúdo (grid 0fr → 1fr) sem "pulo". */
+.item {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.item-inner {
+  display: flex;
+  min-height: 0;
+  gap: 10px;
+  padding-bottom: 8px;
+  overflow: hidden;
+}
+
+.item.is-fresh {
+  animation: grow 420ms var(--ease-emphasized);
+}
+
+.item.is-fresh .item-inner {
+  animation: slide-in 420ms var(--ease-emphasized);
+}
+
+.item.is-fresh .bubble {
+  animation: glow 1400ms var(--ease-emphasized);
+}
+
+@keyframes grow {
+  from {
+    grid-template-rows: 0fr;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+@keyframes glow {
+  0%,
+  30% {
+    background: var(--color-primary-container);
+    box-shadow: 0 0 0 2px rgb(233 30 99 / 25%);
+  }
+}
+
+.bubble {
+  min-width: 0;
+  flex: 1;
+  border-radius: 6px 16px 16px 16px;
+  background: var(--color-surface-variant);
+  padding: 8px 12px;
+  transition: background-color 300ms var(--ease-emphasized);
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field {
+  min-width: 0;
+  flex: 1;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface);
+  padding: 0 16px;
+  font-size: 14px;
+  color: var(--color-ink);
+  outline: none;
+  transition:
+    border-color 150ms var(--ease-emphasized),
+    box-shadow 150ms var(--ease-emphasized);
+}
+
+.field:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgb(233 30 99 / 20%);
+}
+
+.send {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background-image: linear-gradient(135deg, #f06292 0%, #c2185b 100%);
+  color: #fff;
+  box-shadow: 0 3px 0 rgb(173 20 87 / 40%);
+  transition:
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 150ms var(--ease-emphasized),
+    filter 150ms var(--ease-emphasized);
+}
+
+.send:disabled {
+  filter: grayscale(0.5);
+  opacity: 0.5;
+  transform: scale(0.9);
+}
+
+.send:not(:disabled):hover {
+  transform: scale(1.06);
+}
+
+/* O avião de papel "decola" e volta ao enviar. */
+.send.is-sending mat-icon {
+  animation: fly 450ms var(--ease-emphasized);
+}
+
+@keyframes fly {
+  45% {
+    opacity: 0;
+    transform: translate(14px, -14px) rotate(-20deg);
+  }
+  46% {
+    transform: translate(-14px, 14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item.is-fresh,
+  .item.is-fresh .item-inner,
+  .send.is-sending mat-icon {
+    animation: none;
+  }
+}

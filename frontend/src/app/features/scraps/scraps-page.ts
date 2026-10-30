@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { VISIBILITY_LABELS, type Scrap } from '../../core/social/social.models';
 import { SocialStore } from '../../core/social/social.store';
 import { Avatar, TONE_GRADIENTS } from '../../shared/ui/avatar/avatar';
+import { LikeButton } from '../../shared/ui/like-button/like-button';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 
 type ScrapFilter = 'todos' | 'nao-lidos' | 'enviados';
@@ -28,7 +29,7 @@ const MAX_LENGTH = 1000;
 @Component({
   selector: 'ok-scraps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Avatar, MatIconModule, MatTooltipModule, PageHeader],
+  imports: [Avatar, LikeButton, MatIconModule, MatTooltipModule, PageHeader],
   templateUrl: './scraps-page.html',
   styleUrl: './scraps-page.css',
 })

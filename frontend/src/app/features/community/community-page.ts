@@ -2,9 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
+  signal,
+  untracked,
 } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,6 +21,7 @@ import {
   type ComposeDialogData,
   type ComposeDialogResult,
 } from '../../shared/ui/compose-dialog/compose-dialog';
+import { injectCommunityDialogs } from './community-dialogs';
 
 type Tab = 'forum' | 'enquetes' | 'eventos' | 'membros';
 
@@ -35,8 +39,13 @@ export class CommunityPage {
   protected readonly store = inject(SocialStore);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  protected readonly dialogs = injectCommunityDialogs();
 
-  protected readonly community = computed(() => this.store.communityById(this.communityId()));
+  protected readonly community = computed(() => {
+    const community = this.store.communityById(this.communityId());
+    return community?.loaded ? community : undefined;
+  });
+  protected readonly loading = signal(true);
   /** Ao trocar de comunidade, volta para a aba Fórum. */
   protected readonly tab = linkedSignal<string, Tab>({
     source: this.communityId,
@@ -60,6 +69,17 @@ export class CommunityPage {
     return this.store.friends().filter((f) => names.includes(f.shortName));
   });
 
+  constructor() {
+    // Tópicos, enquetes e eventos vêm da API ao abrir (ou trocar de) comunidade.
+    effect(() => {
+      const slug = this.communityId();
+      untracked(() => {
+        this.loading.set(true);
+        void this.store.loadCommunity(slug).finally(() => this.loading.set(false));
+      });
+    });
+  }
+
   protected totalVotes(poll: Poll): number {
     return poll.options.reduce((total, option) => total + option.votes, 0);
   }
@@ -72,6 +92,12 @@ export class CommunityPage {
   protected toggleMembership(): void {
     const community = this.community();
     if (!community) return;
+    if (community.isOwner && community.joined) {
+      this.snackBar.open('Você é o dono desta comunidade e não pode sair dela.', 'OK', {
+        duration: 4000,
+      });
+      return;
+    }
     this.store.toggleMembership(community.id);
     this.snackBar.open(
       community.joined

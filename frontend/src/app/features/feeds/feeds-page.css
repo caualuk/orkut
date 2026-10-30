@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+.status-input {
+  min-width: 0;
+  flex: 1;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--color-surface-variant);
+  padding: 0 16px;
+  font-size: 14px;
+  color: var(--color-ink);
+  outline: none;
+  transition: box-shadow 150ms var(--ease-emphasized);
+}
+
+.status-input:focus {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.comment-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-muted);
+  transition:
+    background-color 200ms var(--ease-emphasized),
+    color 200ms var(--ease-emphasized);
+}
+
+.comment-toggle:hover,
+.comment-toggle[aria-expanded='true'] {
+  background: var(--color-primary-container);
+  color: var(--color-primary-strong);
+}
+
+.count {
+  min-width: 18px;
+  border-radius: 999px;
+  background: var(--color-surface-variant);
+  padding: 0 6px;
+  text-align: center;
+  line-height: 18px;
+}
+
+/* Área de comentários que abre deslizando (grid 0fr → 1fr). */
+.thread {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms var(--ease-emphasized);
+}
+
+.thread.is-open {
+  grid-template-rows: 1fr;
+}
+
+.thread-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Fechada, nada lá dentro recebe foco. */
+.thread:not(.is-open) .thread-inner {
+  visibility: hidden;
+  transition: visibility 0s 320ms;
+}

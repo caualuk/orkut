@@ -46,7 +46,13 @@
     <ul class="flex flex-col gap-3" data-testid="friend-requests">
       @for (request of store.friendRequests(); track request.id) {
         <li class="ok-card flex items-center gap-4 p-4">
-          <ok-avatar [tone]="request.tone" [initials]="request.initials" shape="tile" [size]="52" />
+          <ok-avatar
+            [tone]="request.tone"
+            [src]="request.photoUrl"
+            [initials]="request.initials"
+            shape="tile"
+            [size]="52"
+          />
           <div class="min-w-0 flex-1">
             <p class="font-bold text-ink">{{ request.name }}</p>
             <p class="text-xs text-ink-muted">{{ request.mutualFriends }} amigos em comum</p>
@@ -62,6 +68,7 @@
             type="button"
             class="ok-btn-primary"
             (click)="store.acceptFriendRequest(request.id)"
+            data-testid="accept-request"
           >
             Aceitar
           </button>
@@ -81,6 +88,7 @@
         <li class="card ok-card ok-enter" [style.--i]="i" data-testid="friend-card">
           <ok-avatar
             [tone]="friend.tone"
+            [src]="friend.photoUrl"
             [initials]="friend.initials"
             shape="tile"
             [size]="88"
@@ -119,7 +127,15 @@
         </li>
       } @empty {
         <li class="ok-card col-span-full p-8 text-center text-sm text-ink-muted">
-          Nenhum amigo encontrado{{ term() ? ' para "' + term() + '"' : '' }}.
+          @if (!store.loaded()) {
+            Carregando…
+          } @else if (term()) {
+            Nenhum amigo seu se chama "{{ term() }}". Veja abaixo outras pessoas no orkut.
+          } @else if (filter() === 'todos') {
+            Você ainda não tem amigos no orkut. Busque pessoas pelo nome ou convide alguém!
+          } @else {
+            Ninguém por aqui ainda.
+          }
         </li>
       }
 
@@ -139,5 +155,53 @@
         </li>
       }
     </ul>
+  }
+
+  @if (
+    filter() !== 'pedidos' &&
+    (term().trim() || (!store.friends().length && store.suggestions().length))
+  ) {
+    <section class="ok-card p-5" aria-labelledby="people-title" data-testid="people-results">
+      <h2 id="people-title" class="mb-4 text-lg font-bold text-ink">
+        {{ term().trim() ? 'Pessoas no orkut' : 'Pessoas que você talvez conheça' }}
+      </h2>
+      <ul class="flex flex-col gap-3">
+        @for (person of people(); track person.id) {
+          <li class="flex items-center gap-3">
+            <ok-avatar
+              [tone]="person.tone"
+              [src]="person.photoUrl"
+              [initials]="person.initials"
+              shape="tile"
+              [size]="44"
+            />
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-bold text-ink">{{ person.name }}</p>
+              <p class="text-xs text-ink-muted">
+                {{ person.mutualFriends }} {{ person.mutualFriends === 1 ? 'amigo' : 'amigos' }} em
+                comum
+              </p>
+            </div>
+            @if (person.friend) {
+              <span class="text-xs font-bold text-success">Amigos</span>
+            } @else {
+              <button
+                type="button"
+                [class]="person.requested ? 'ok-btn-outline' : 'ok-btn-primary'"
+                [attr.aria-pressed]="person.requested"
+                (click)="toggleRequest(person)"
+                data-testid="add-friend"
+              >
+                {{ person.requested ? 'Pedido enviado' : '+ Adicionar' }}
+              </button>
+            }
+          </li>
+        } @empty {
+          <li class="py-4 text-center text-sm text-ink-muted">
+            {{ searching() ? 'Buscando…' : 'Ninguém encontrado com esse nome.' }}
+          </li>
+        }
+      </ul>
+    </section>
   }
 </div>

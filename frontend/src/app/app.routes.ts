@@ -104,8 +104,14 @@ export const routes: Routes = [
         data: { heading: 'Amigos' } satisfies ShellRouteData,
         loadComponent: () => import('./features/friends/friends-page').then((m) => m.FriendsPage),
       },
-      // Sem tela de listagem no design: "Comunidades" abre a primeira comunidade do usuário.
-      { path: 'comunidades', pathMatch: 'full', redirectTo: 'comunidades/eu-odeio-acordar-cedo' },
+      {
+        path: 'comunidades',
+        pathMatch: 'full',
+        title: 'Comunidades · orkut',
+        data: { heading: 'Comunidades' } satisfies ShellRouteData,
+        loadComponent: () =>
+          import('./features/community/communities-page').then((m) => m.CommunitiesPage),
+      },
       {
         path: 'comunidades/:communityId',
         title: 'Comunidade · orkut',

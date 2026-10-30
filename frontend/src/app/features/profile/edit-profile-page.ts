@@ -1,24 +1,33 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   GENDER_LABELS,
   RELATIONSHIP_LABELS,
+  SUGGESTED_INTERESTS,
   type Gender,
   type Profile,
   type Relationship,
 } from '../../core/social/social.models';
-import { SUGGESTED_INTERESTS } from '../../core/social/social.seed';
 import { SocialStore } from '../../core/social/social.store';
 import { ProfilePhoto } from '../../shared/ui/profile-photo/profile-photo';
 
-type Tab = 'geral' | 'social' | 'contato' | 'profissional' | 'pessoal';
+type Tab = 'geral' | 'social' | 'contato' | 'profissional';
 
 export const ABOUT_MAX_LENGTH = 500;
 const MAX_INTERESTS = 12;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+/** Mesma regra da API: letras (inclusive acentuadas), espaço, apóstrofo e hífen. */
+const NAME_PATTERN = /^[\p{L}\p{M}' -]*$/u;
 
 /** Editar perfil ("Editar perfil · Desktop 1440", "M · Editar perfil"). */
 @Component({
@@ -38,7 +47,6 @@ export class EditProfilePage {
     { id: 'social', label: 'Social' },
     { id: 'contato', label: 'Contato' },
     { id: 'profissional', label: 'Profissional' },
-    { id: 'pessoal', label: 'Pessoal' },
   ];
   protected readonly tab = signal<Tab>('geral');
 
@@ -51,6 +59,7 @@ export class EditProfilePage {
   protected readonly today = new Date().toISOString().slice(0, 10);
 
   protected readonly photoUrl = signal(this.store.profile().photoUrl);
+  protected readonly uploading = signal(false);
   protected readonly interests = signal<string[]>([...this.store.profile().interests]);
   protected readonly interestOptions = signal<string[]>(
     unique([...SUGGESTED_INTERESTS, ...this.store.profile().interests]),
@@ -59,8 +68,11 @@ export class EditProfilePage {
   protected readonly newInterest = signal('');
 
   protected readonly form = this.fb.group({
-    firstName: ['', [Validators.required, Validators.maxLength(40)]],
-    lastName: ['', Validators.maxLength(40)],
+    firstName: [
+      '',
+      [Validators.required, Validators.maxLength(40), Validators.pattern(NAME_PATTERN)],
+    ],
+    lastName: ['', [Validators.maxLength(40), Validators.pattern(NAME_PATTERN)]],
     gender: this.fb.control<Gender>('nao-informar'),
     relationship: this.fb.control<Relationship>('nao-informar'),
     birthday: [''],
@@ -75,23 +87,24 @@ export class EditProfilePage {
     }),
     contact: this.fb.group({
       phone: ['', [Validators.maxLength(20), Validators.pattern(/^[\d\s()+-]*$/)]],
-      website: ['', [Validators.maxLength(200), Validators.pattern(/^(https?:\/\/\S+)?$/)]],
+      website: ['', [Validators.maxLength(120), Validators.pattern(/^(https?:\/\/\S+)?$/)]],
     }),
     professional: this.fb.group({
       education: ['', Validators.maxLength(80)],
       company: ['', Validators.maxLength(80)],
       role: ['', Validators.maxLength(80)],
     }),
-    personal: this.fb.group({
-      music: ['', Validators.maxLength(200)],
-      movies: ['', Validators.maxLength(200)],
-      books: ['', Validators.maxLength(200)],
-      passions: ['', Validators.maxLength(200)],
-    }),
   });
 
   constructor() {
-    this.reset();
+    // O perfil chega da API depois de a tela abrir: preenche o formulário quando
+    // ele chegar (ou mudar no servidor), sem sobrescrever o que já foi editado.
+    effect(() => {
+      this.store.profile();
+      untracked(() => {
+        if (!this.form.dirty) this.reset();
+      });
+    });
   }
 
   protected toggleInterest(interest: string): void {
@@ -114,22 +127,32 @@ export class EditProfilePage {
     this.addingInterest.set(false);
   }
 
-  protected onPhoto(files: FileList | null): void {
+  /** A foto é enviada na hora (com prévia local enquanto sobe). */
+  protected async onPhoto(files: FileList | null): Promise<void> {
     const file = files?.[0];
     if (!file) return;
     if (!/^image\/(png|jpeg)$/.test(file.type) || file.size > MAX_PHOTO_BYTES) {
       this.snackBar.open('Use uma imagem JPG ou PNG de até 5 MB.', 'OK', { duration: 4000 });
       return;
     }
-    this.photoUrl.set(URL.createObjectURL(file));
+    const preview = URL.createObjectURL(file);
+    this.photoUrl.set(preview);
+    this.uploading.set(true);
+    const ok = await this.store.uploadProfilePhoto(file);
+    this.uploading.set(false);
+    URL.revokeObjectURL(preview);
+    this.photoUrl.set(this.store.profile().photoUrl);
+    this.snackBar.open(ok ? 'Foto atualizada!' : 'Não foi possível enviar a foto.', 'OK', {
+      duration: 3000,
+    });
   }
 
   protected save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      const firstInvalidTab = (
-        ['geral', 'social', 'contato', 'profissional', 'pessoal'] as Tab[]
-      ).find((tab) => this.tabHasError(tab));
+      const firstInvalidTab = (['geral', 'social', 'contato', 'profissional'] as Tab[]).find(
+        (tab) => this.tabHasError(tab),
+      );
       if (firstInvalidTab) this.tab.set(firstInvalidTab);
       return;
     }
@@ -140,7 +163,6 @@ export class EditProfilePage {
       firstName: value.firstName.trim(),
       lastName: value.lastName.trim(),
       interests: this.interests(),
-      photoUrl: this.photoUrl(),
     } satisfies Partial<Profile>);
     this.form.markAsPristine();
     this.snackBar.open('Perfil atualizado!', 'OK', { duration: 3000 });
@@ -148,10 +170,9 @@ export class EditProfilePage {
 
   protected reset(): void {
     const profile = this.store.profile();
-    const [firstName = '', ...rest] = this.store.displayName().split(' ');
     this.form.reset({
-      firstName,
-      lastName: rest.join(' '),
+      firstName: profile.firstName,
+      lastName: profile.lastName,
       gender: profile.gender,
       relationship: profile.relationship,
       birthday: profile.birthday,
@@ -160,7 +181,6 @@ export class EditProfilePage {
       social: profile.social,
       contact: profile.contact,
       professional: profile.professional,
-      personal: profile.personal,
     });
     this.interests.set([...profile.interests]);
     this.photoUrl.set(profile.photoUrl);
@@ -177,8 +197,6 @@ export class EditProfilePage {
         return c.contact.invalid;
       case 'profissional':
         return c.professional.invalid;
-      case 'pessoal':
-        return c.personal.invalid;
     }
   }
 }

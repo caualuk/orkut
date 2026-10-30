@@ -28,7 +28,7 @@
     [class.max-tab:hidden]="!composeOpen()"
     aria-label="Escrever recado"
   >
-    <ok-avatar class="max-tab:!hidden" tone="blue" [size]="48" />
+    <ok-avatar class="max-tab:!hidden" tone="blue" [src]="store.profile().photoUrl" [size]="48" />
     <form class="composer flex-1" (submit)="$event.preventDefault(); send()">
       <label for="scrap-composer" class="sr-only">
         Escreva um recado {{ recipient() ? 'para ' + recipient()!.name : '' }}
@@ -132,6 +132,7 @@
           <ok-avatar
             class="max-tab:!hidden"
             [tone]="scrap.tone"
+            [src]="scrap.direction === 'recebido' ? scrap.photoUrl : null"
             [initials]="
               (scrap.direction === 'enviado' ? scrap.toName : scrap.authorName)?.[0] ?? ''
             "
@@ -143,6 +144,7 @@
               <ok-avatar
                 class="tab:!hidden"
                 [tone]="scrap.tone"
+                [src]="scrap.direction === 'recebido' ? scrap.photoUrl : null"
                 [initials]="scrap.authorName[0] ?? ''"
                 shape="tile"
                 [size]="32"
@@ -171,7 +173,9 @@
               ></div>
             }
             @for (reply of scrap.replies; track $index) {
-              <p class="mt-2 rounded-xl bg-surface-variant px-3 py-2 text-sm text-ink-secondary">
+              <p
+                class="reply mt-2 rounded-xl bg-surface-variant px-3 py-2 text-sm text-ink-secondary"
+              >
                 <strong class="text-ink">Você:</strong> {{ reply }}
               </p>
             }
@@ -186,16 +190,13 @@
                   <mat-icon aria-hidden="true" fontIcon="reply" /> Responder
                 </button>
               }
-              <button
-                type="button"
-                class="action"
-                [class.text-primary-strong]="scrap.liked"
-                [attr.aria-pressed]="scrap.liked"
-                (click)="store.toggleScrapLike(scrap.id)"
-              >
-                <mat-icon aria-hidden="true" fontIcon="favorite" />
-                Curtir{{ scrap.likes ? ' (' + scrap.likes + ')' : '' }}
-              </button>
+              <ok-like-button
+                class="-ml-1.5"
+                [liked]="scrap.liked"
+                [count]="scrap.likes"
+                [subject]="'o recado de ' + scrap.authorName"
+                (toggled)="store.toggleScrapLike(scrap.id)"
+              />
               <button type="button" class="action max-tab:!hidden" (click)="remove(scrap)">
                 <mat-icon aria-hidden="true" fontIcon="close" /> Excluir
               </button>
