@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyHealthFailure } from '../../src/shared/http/health-failure.js';
+import { classifyHealthFailure, databaseHostKind } from '../../src/shared/http/health-failure.js';
 
 describe('classifyHealthFailure', () => {
   it.each([
@@ -12,5 +12,15 @@ describe('classifyHealthFailure', () => {
     [new Error('algo inesperado'), 'unknown'],
   ])('classifica %j como %s', (error, expected) => {
     expect(classifyHealthFailure(error)).toBe(expected);
+  });
+});
+
+describe('databaseHostKind', () => {
+  it.each([
+    ['postgresql://u:p@aws-1-sa-east-1.pooler.supabase.com:6543/postgres', 'pooler'],
+    ['postgresql://postgres:p@db.abc.supabase.co:5432/postgres', 'direta'],
+    ['postgresql://u:p@localhost:5432/test', 'outra'],
+  ])('identifica %s', (url, expected) => {
+    expect(databaseHostKind(url)).toBe(expected);
   });
 });

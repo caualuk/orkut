@@ -16,3 +16,10 @@ export function classifyHealthFailure(error: unknown): HealthFailure {
   }
   return 'unknown';
 }
+
+/** Tipo de conexão configurada (sem expor o host): na Vercel precisa ser `pooler`. */
+export function databaseHostKind(url: string): 'pooler' | 'direta' | 'outra' {
+  const { hostname } = new URL(url);
+  if (hostname.endsWith('.pooler.supabase.com')) return 'pooler';
+  return /^db\..+\.supabase\.co$/.test(hostname) ? 'direta' : 'outra';
+}
