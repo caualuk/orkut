@@ -23,6 +23,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/signup/signup-page').then((m) => m.SignupPage),
   },
   {
+    // Onboarding pós-cadastro: escolha de interesses (já com sessão).
+    path: 'boas-vindas',
+    title: 'Seus interesses · orkut',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/auth/onboarding/interests-page').then((m) => m.InterestsPage),
+  },
+  {
     path: 'recuperar-senha',
     title: 'Recuperar senha · orkut',
     canActivate: [guestGuard],

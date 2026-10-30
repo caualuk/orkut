@@ -1,0 +1,133 @@
+<div
+  class="page relative flex min-h-dvh flex-col items-center px-4 py-10 sm:justify-center sm:px-6"
+>
+  <div class="blob" aria-hidden="true"></div>
+
+  <ok-brand-logo class="relative mb-8 text-[32px] sm:text-[40px]" [viewTransition]="false" />
+
+  <main class="card relative w-full max-w-[620px] rounded-[28px] bg-surface p-6 sm:p-10">
+    <p class="text-xs font-semibold tracking-[0.18em] text-primary-strong uppercase">
+      Conta criada ✓ · último passo
+    </p>
+    <h1
+      class="mt-2 text-2xl font-bold text-ink sm:text-[30px] sm:leading-tight"
+      data-testid="interests-title"
+    >
+      Do que você curte{{ firstName() ? ', ' + firstName() : '' }}?
+    </h1>
+    <p class="mt-2 text-sm text-ink-secondary">
+      Marque pelo menos {{ min }} interesses. Eles aparecem no seu perfil e ajudam a encontrar
+      amigos e comunidades.
+    </p>
+
+    @if (photoFailed) {
+      <p
+        class="mt-4 rounded-xl bg-surface-variant px-4 py-3 text-[13px] text-ink-secondary"
+        role="status"
+        data-testid="photo-warning"
+      >
+        Sua conta foi criada, mas não conseguimos enviar a foto de perfil. Você pode adicioná-la
+        depois em <strong>Editar perfil</strong>.
+      </p>
+    }
+
+    @if (errorMessage(); as message) {
+      <p
+        role="alert"
+        class="mt-4 rounded-xl bg-primary-container px-4 py-3 text-[13px] font-medium text-primary-strong"
+        data-testid="interests-error"
+      >
+        {{ message }}
+      </p>
+    }
+
+    <fieldset class="mt-6">
+      <legend class="sr-only">Interesses</legend>
+      <ul class="flex flex-wrap gap-2" data-testid="interest-options">
+        @for (interest of options(); track interest) {
+          @let on = isSelected(interest);
+          <li>
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="on"
+              [attr.aria-pressed]="on"
+              [disabled]="!on && selected().length >= max"
+              (click)="toggle(interest)"
+            >
+              @if (on) {
+                <mat-icon aria-hidden="true" fontIcon="check" class="!size-4 !text-base" />
+              }
+              {{ interest }}
+            </button>
+          </li>
+        }
+      </ul>
+    </fieldset>
+
+    <form class="mt-4 flex gap-2" (submit)="$event.preventDefault(); addCustom()">
+      <label for="custom-interest" class="sr-only">Adicionar outro interesse</label>
+      <input
+        id="custom-interest"
+        class="ok-input !min-h-11 !py-2 text-sm"
+        placeholder="Outro interesse (ex.: Skate)"
+        [attr.maxlength]="maxLength"
+        [value]="draft()"
+        (input)="draft.set($any($event.target).value)"
+        [disabled]="selected().length >= max"
+        data-testid="custom-interest"
+      />
+      <button
+        type="submit"
+        class="ok-btn-tonal !min-h-11 shrink-0"
+        [disabled]="!draft().trim() || selected().length >= max"
+        data-testid="add-interest"
+      >
+        + Adicionar
+      </button>
+    </form>
+
+    <p class="mt-3 text-xs text-ink-muted" aria-live="polite" data-testid="interest-count">
+      {{ selected().length }} de {{ max }} selecionados
+      @if (remaining()) {
+        · faltam {{ remaining() }}
+      }
+    </p>
+
+    <div
+      class="mt-8 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <button
+        type="button"
+        class="h-12 rounded-lg px-4 text-sm font-bold text-ink-secondary hover:bg-surface-variant"
+        (click)="skip()"
+        [disabled]="saving()"
+        data-testid="skip-interests"
+      >
+        Pular por agora
+      </button>
+      <button
+        type="button"
+        class="cta flex h-14 items-center justify-center gap-2.5 rounded-lg px-8 text-base font-bold text-white"
+        [class.is-pending]="saving()"
+        [attr.aria-busy]="saving()"
+        [disabled]="!canContinue()"
+        (click)="save()"
+        data-testid="save-interests"
+      >
+        @if (saving()) {
+          <mat-progress-spinner
+            mode="indeterminate"
+            diameter="22"
+            strokeWidth="3"
+            aria-hidden="true"
+          />
+          <span>Salvando…</span>
+        } @else {
+          <span>Continuar</span>
+          <mat-icon class="!size-5 !text-[20px]" aria-hidden="true" fontIcon="arrow_forward" />
+        }
+      </button>
+    </div>
+  </main>
+</div>

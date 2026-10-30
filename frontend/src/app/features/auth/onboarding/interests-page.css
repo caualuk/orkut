@@ -1,0 +1,98 @@
+:host {
+  display: block;
+}
+
+.page {
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f4f8 60%, #e9e7ee 100%);
+}
+
+.blob {
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  left: -200px;
+  top: -240px;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgb(248 187 208 / 40%), rgb(248 187 208 / 0%));
+  pointer-events: none;
+}
+
+.card {
+  border: 2px solid #fff;
+  box-shadow: var(--shadow-card);
+  animation: card-in 500ms var(--ease-emphasized) both;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background-color 150ms var(--ease-emphasized),
+    transform 150ms var(--ease-emphasized);
+}
+
+.chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.chip--on {
+  border-color: var(--color-primary-container);
+  background: var(--color-primary-container);
+  color: var(--color-primary-strong);
+  font-weight: 600;
+}
+
+/* Mesmo botão com base de 6px do login/cadastro (Motion spec · 06). */
+.cta {
+  background: linear-gradient(135deg, #f06292 0%, #d81b60 100%);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 33%),
+    0 6px 0 rgb(173 20 87 / 40%),
+    0 18px 30px rgb(233 30 99 / 33%);
+  transition:
+    transform 150ms var(--ease-emphasized),
+    filter 150ms var(--ease-emphasized);
+  cursor: pointer;
+}
+
+.cta:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.cta:active:not(:disabled) {
+  transform: translateY(4px);
+}
+
+.cta:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.35);
+  opacity: 0.7;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation-name: none;
+  }
+}
