@@ -20,9 +20,17 @@ test.describe('Tela de login · renderização', () => {
     ).toBeVisible();
     await expect(emailField(page)).toBeVisible();
     await expect(passwordField(page)).toBeVisible();
-    await expect(page.getByRole('checkbox', { name: 'Lembrar de mim' })).toBeVisible();
+    // No bottom sheet (compact) o design mostra só "Esqueci a senha" e "Criar conta".
+    const remember = page.getByRole('checkbox', { name: 'Lembrar de mim' });
+    if (isMobile) await expect(remember).toBeHidden();
+    else await expect(remember).toBeVisible();
     await expect(page.getByRole('link', { name: 'Esqueci a senha' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Criar conta grátis' })).toBeVisible();
+    await expect(
+      page.getByRole('link', {
+        name: isMobile ? 'Criar conta' : 'Criar conta grátis',
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(submitButton(page)).toHaveText(/Entrar no orkut/);
 
     // Compact (< 600px): eyebrow, subtítulo e cartões flutuantes saem; o card vira bottom sheet.
@@ -32,13 +40,13 @@ test.describe('Tela de login · renderização', () => {
       await expect(page.getByText('Que bom te ver de novo! Acesse sua conta.')).toBeHidden();
     } else {
       await expect(eyebrow).toBeVisible();
-      await expect(page.getByText('Novo scrap')).toBeVisible();
+      await expect(page.getByText('Juliana e Pedro agora estão namorando')).toBeVisible();
     }
   });
 
   test('a cena 3D é decorativa e não aparece na árvore de acessibilidade', async ({ page }) => {
     await expect(page.locator('ok-login-scene')).toHaveAttribute('aria-hidden', 'true');
-    await expect(page.getByRole('heading', { name: 'Novo scrap' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Mari Souza' })).toHaveCount(0);
   });
 
   test('não tem violações de acessibilidade (axe · WCAG 2.1 AA)', async ({ page }) => {
@@ -213,7 +221,7 @@ test.describe('Navegação e redirecionamentos', () => {
   test('"Criar conta grátis" leva ao cadastro', async ({ page }) => {
     await mockAuthApi(page);
     await page.goto('/login');
-    await page.getByRole('link', { name: 'Criar conta grátis' }).click();
+    await page.getByTestId('signup-link').click();
     await expect(page).toHaveURL(/\/cadastro$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Criar conta' })).toBeVisible();
     await page.getByTestId('login-link').click();
@@ -250,11 +258,11 @@ test.describe('Navegação e redirecionamentos', () => {
 test.describe('Movimento reduzido', () => {
   test.use({ reducedMotion: 'reduce' });
 
-  test('desliga as animações contínuas da cena 3D', async ({ page }) => {
+  test('desliga o balanço contínuo dos cartões da cena', async ({ page }) => {
     await mockAuthApi(page);
     await page.goto('/login');
     const animation = await page
-      .locator('ok-login-scene .float')
+      .locator('ok-login-scene .sway')
       .first()
       .evaluate((el) => getComputedStyle(el).animationName);
     expect(animation).toBe('none');

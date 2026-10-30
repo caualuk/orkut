@@ -26,15 +26,19 @@
   animation: card-in 600ms var(--ease-emphasized) 120ms both;
 }
 
-/* Camada traseira rotacionada −4° para sensação de pilha (apenas sm+). */
+/* Camada traseira inclinada 4° (frame: +43px, +20px do card) para sensação de pilha. */
 @media (min-width: 640px) {
   .card-stack::before {
     content: '';
     position: absolute;
-    inset: 20px -20px -20px 20px;
+    top: 20px;
+    left: 43px;
+    width: 100%;
+    height: 100%;
     border-radius: 32px;
     background: rgb(28 27 31 / 6%);
-    rotate: -4deg;
+    transform-origin: 0 0;
+    rotate: 4deg;
   }
 }
 

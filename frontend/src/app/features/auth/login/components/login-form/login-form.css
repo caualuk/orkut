@@ -77,3 +77,12 @@
   cursor: progress;
   filter: saturate(0.85);
 }
+
+/* Bottom sheet (compact): campos de 56px como no frame "M · Login". */
+@media (max-width: 639.98px) {
+  .ok-text-field {
+    --mat-form-field-container-height: 56px;
+    --mat-form-field-filled-with-label-container-padding-top: 22px;
+    --mat-form-field-filled-with-label-container-padding-bottom: 6px;
+  }
+}

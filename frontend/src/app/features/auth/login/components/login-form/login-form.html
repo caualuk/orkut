@@ -1,14 +1,14 @@
 <section
   okTilt
-  class="card relative rounded-t-[28px] bg-surface px-6 pt-4 pb-8 sm:rounded-3xl sm:px-10 sm:py-10"
+  class="card relative rounded-t-[32px] bg-surface px-6 pt-3 pb-[34px] sm:rounded-[32px] sm:px-10 sm:py-10"
   aria-labelledby="login-title"
 >
-  <div class="mx-auto mb-5 h-1 w-9 rounded-full bg-outline sm:hidden" aria-hidden="true"></div>
+  <div class="mx-auto mb-3.5 h-1 w-9 rounded-full bg-outline sm:hidden" aria-hidden="true"></div>
 
   <h1 id="login-title" class="text-2xl font-bold text-ink sm:text-[30px] sm:leading-[45px]">
     Entrar
   </h1>
-  <p class="mt-1 mb-5 hidden text-sm text-ink-secondary sm:block">
+  <p class="mt-5 mb-5 hidden text-sm text-ink-secondary sm:block">
     Que bom te ver de novo! Acesse sua conta.
   </p>
 
@@ -25,7 +25,7 @@
     </div>
   }
 
-  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="mt-4 flex flex-col sm:mt-0">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="mt-3.5 flex flex-col sm:mt-0">
     <mat-form-field
       appearance="fill"
       class="ok-text-field"
@@ -54,7 +54,7 @@
 
     <mat-form-field
       appearance="fill"
-      class="ok-text-field mt-5"
+      class="ok-text-field mt-3.5 sm:mt-5"
       subscriptSizing="dynamic"
       hideRequiredMarker
     >
@@ -87,13 +87,18 @@
       }
     </mat-form-field>
 
-    <div class="mt-4 flex min-h-10 items-center justify-between gap-2">
-      <mat-checkbox formControlName="remember" class="-ml-2.5" data-testid="remember-checkbox">
+    <!-- No compact (bottom sheet) o design mostra só "Esqueci a senha", à direita. -->
+    <div class="mt-3.5 flex items-center justify-end gap-2 sm:mt-3 sm:min-h-10 sm:justify-between">
+      <mat-checkbox
+        formControlName="remember"
+        class="-ml-2.5 max-sm:!hidden"
+        data-testid="remember-checkbox"
+      >
         Lembrar de mim
       </mat-checkbox>
       <a
         routerLink="/recuperar-senha"
-        class="rounded-sm py-2 text-[13px] font-semibold text-primary hover:text-primary-strong hover:underline"
+        class="rounded-sm text-[13px] font-bold text-primary-strong hover:underline sm:py-2 sm:font-semibold sm:text-primary sm:hover:text-primary-strong"
         data-testid="forgot-password-link"
       >
         Esqueci a senha
@@ -103,7 +108,7 @@
     <button
       type="submit"
       matRipple
-      class="cta mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-lg text-base font-bold text-white"
+      class="cta mt-3.5 flex h-14 w-full items-center justify-center gap-2.5 rounded-lg text-base font-bold text-white sm:mt-3"
       [class.is-pending]="pending()"
       [attr.aria-busy]="pending()"
       [disabled]="pending()"
@@ -124,14 +129,14 @@
     </button>
   </form>
 
-  <p class="mt-5 text-center text-sm font-bold text-primary-strong">
+  <p class="mt-3.5 text-center text-[13px] font-bold text-primary-strong sm:mt-5 sm:text-sm">
     Ainda não tem conta?
     <a
       routerLink="/cadastro"
       class="rounded-sm underline-offset-2 hover:underline"
       data-testid="signup-link"
     >
-      Criar conta grátis
+      Criar conta<span class="max-sm:hidden"> grátis</span>
     </a>
   </p>
 </section>
