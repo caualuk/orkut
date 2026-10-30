@@ -8,8 +8,10 @@ Navegador ──► Angular (4200) ──proxy /api──► Express API (3000) 
 ```
 
 Em produção o frontend (estático) e a API devem ser servidos **na mesma origem**
-(ex.: `https://orkut.app` e `https://orkut.app/api`) por um proxy reverso com HTTPS. Assim o
-cookie de sessão continua first-party, `SameSite=Strict` e com prefixo `__Host-`.
+(ex.: `https://orkut.app` e `https://orkut.app/api`) com HTTPS. Assim o cookie de sessão
+continua first-party, `SameSite=Strict` e com prefixo `__Host-`. Na Vercel isso é feito por
+um único projeto: o Angular como site estático e o Express como Serverless Function
+(`api/index.mjs`) — ver [Deploy](deploy.md).
 
 ## Backend (`backend/`)
 
@@ -19,7 +21,6 @@ src/
 ├── db/
 │   ├── pool.ts              # Pool pg com TLS validado pela CA do Supabase
 │   ├── migrate.ts           # Runner de migrations (transação + advisory lock)
-│   ├── seed.ts              # Usuário de desenvolvimento (bloqueado em produção)
 │   └── migrations/*.sql     # Migrations versionadas (NNN_nome.sql)
 ├── modules/auth/            # Módulo de autenticação
 │   ├── auth.routes.ts       # Camada HTTP (rotas → serviço)
@@ -30,14 +31,15 @@ src/
 │   └── session-cookie.ts    # Política do cookie de sessão
 ├── shared/                  # Erros, logger, middlewares HTTP, primitivas de segurança
 ├── app.ts                   # createApp(deps): monta a app a partir das dependências
-└── server.ts                # Composition root: instancia dependências reais e sobe o HTTP
+├── bootstrap.ts             # Composition root: instancia as dependências reais
+└── server.ts                # Sobe o HTTP (local); na Vercel, api/index.mjs usa o bootstrap
 ```
 
 **Decisões**
 
 - **Camadas** rotas → serviço → repositório. O serviço depende da _interface_
   `AuthRepository`, o que permite testar regras sem banco (repositório em memória).
-- **Injeção de dependências manual** em `server.ts`; `createApp` recebe tudo por parâmetro.
+- **Injeção de dependências manual** em `bootstrap.ts`; `createApp` recebe tudo por parâmetro.
 - **Sessões opacas no banco** em vez de JWT: permitem revogação imediata (logout,
   comprometimento) e não expõem dados no token. O banco guarda apenas o SHA-256 do token.
 - **Argon2id** para senhas (parâmetros OWASP: 19 MiB, t=2, p=1).
@@ -46,13 +48,14 @@ src/
 
 ### API
 
-| Método | Rota               | Descrição                                 | Respostas               |
-| ------ | ------------------ | ----------------------------------------- | ----------------------- |
-| GET    | `/api/health`      | Verifica API e banco                      | 200, 503                |
-| POST   | `/api/auth/signup` | Cria a conta e já inicia a sessão         | 201, 400, 403, 409, 429 |
-| POST   | `/api/auth/login`  | `{ email, password, remember? }` → sessão | 200, 400, 401, 403, 429 |
-| POST   | `/api/auth/logout` | Revoga a sessão e limpa o cookie          | 204                     |
-| GET    | `/api/auth/me`     | Usuário da sessão atual                   | 200, 401                |
+| Método | Rota                | Descrição                                                  | Respostas               |
+| ------ | ------------------- | ---------------------------------------------------------- | ----------------------- |
+| GET    | `/api/health`       | Verifica API e banco                                       | 200, 503                |
+| POST   | `/api/auth/signup`  | Cria a conta e já inicia a sessão                          | 201, 400, 403, 409, 429 |
+| POST   | `/api/auth/login`   | `{ email, password, remember? }` → sessão                  | 200, 400, 401, 403, 429 |
+| POST   | `/api/auth/logout`  | Revoga a sessão e limpa o cookie                           | 204                     |
+| GET    | `/api/auth/me`      | Usuário da sessão atual                                    | 200, 401                |
+| DELETE | `/api/auth/account` | `{ password }` → exclui a conta e todos os dados (cascata) | 204, 400, 401, 403, 429 |
 
 Corpo do cadastro: `{ firstName, lastName, email, password, birthDate?, gender?, acceptTerms: true }`.
 Senha com 8+ caracteres, letras e números; nascimento opcional (13+ anos); `gender` em
@@ -67,18 +70,18 @@ Tudo o que as telas internas mostram vem daqui — **pessoas e conteúdos reais*
 nada de dados de exemplo. Leitura em um único `GET /state`; ações em `POST` (respostas
 `204`, o frontend recarrega o estado). Regras de permissão ficam no próprio SQL.
 
-| Área          | Rotas                                                                                  | Regras                                                   |
-| ------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Estado        | `GET /state`                                                                           | perfil, preferências, amigos, recados, conversas, feed…  |
-| Perfil        | `POST /profile` (parcial), `POST /profile/photo` (JPG/PNG cru ≤ 5 MB), `…/photo/remove`, `GET /users/:id/photo` | campos desconhecidos → 400; imagem conferida por *magic bytes* |
-| Preferências  | `POST /settings` (parcial, mesclado)                                                   | tema, privacidade, notificações                          |
-| Pessoas       | `POST /people/search`, `POST /friends/{request,cancel,accept,reject,remove,best,fan}`  | pedido invertido vira aceite; sem pares duplicados       |
-| Recados       | `POST /scraps`, `/scraps/:id/{reply,like,read,delete}`                                 | só entre amigos (ou no próprio mural)                    |
-| Mensagens     | `POST /conversations/:id/{messages,read}`                                              | só entre amigos                                          |
-| Depoimentos   | `POST /testimonials`, `/testimonials/:id/{approve,delete,like}`                        | só para amigos que aceitam; ficam pendentes até aprovar  |
-| Álbum         | `POST /albums`, `/albums/:id/{photos,delete}`, `GET /photos/:id`, `/photos/:id/delete` | foto só aparece para quem a visibilidade do álbum permite |
-| Feed          | `POST /status`, `/feed/like`, `/feed/comment`                                          | status, fotos novas, comunidades e amizades dos amigos   |
-| Comunidades   | `POST /communities` (criar), `/communities/search`, `GET /communities/:slug`, `/communities/:id/{join,leave,topics,polls,events}`, `/polls/:id/vote`, `/events/:id/attend` | só membros publicam/votam; voto único; dono não sai |
+| Área         | Rotas                                                                                                                                                                      | Regras                                                         |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Estado       | `GET /state`                                                                                                                                                               | perfil, preferências, amigos, recados, conversas, feed…        |
+| Perfil       | `POST /profile` (parcial), `POST /profile/photo` (JPG/PNG cru ≤ 5 MB), `…/photo/remove`, `GET /users/:id/photo`                                                            | campos desconhecidos → 400; imagem conferida por _magic bytes_ |
+| Preferências | `POST /settings` (parcial, mesclado)                                                                                                                                       | tema, privacidade, notificações                                |
+| Pessoas      | `POST /people/search`, `POST /friends/{request,cancel,accept,reject,remove,best,fan}`                                                                                      | pedido invertido vira aceite; sem pares duplicados             |
+| Recados      | `POST /scraps`, `/scraps/:id/{reply,like,read,delete}`                                                                                                                     | só entre amigos (ou no próprio mural)                          |
+| Mensagens    | `POST /conversations/:id/{messages,read}`                                                                                                                                  | só entre amigos                                                |
+| Depoimentos  | `POST /testimonials`, `/testimonials/:id/{approve,delete,like}`                                                                                                            | só para amigos que aceitam; ficam pendentes até aprovar        |
+| Álbum        | `POST /albums`, `/albums/:id/{photos,delete}`, `GET /photos/:id`, `/photos/:id/delete`                                                                                     | foto só aparece para quem a visibilidade do álbum permite      |
+| Feed         | `POST /status`, `/feed/like`, `/feed/comment`                                                                                                                              | status, fotos novas, comunidades e amizades dos amigos         |
+| Comunidades  | `POST /communities` (criar), `/communities/search`, `GET /communities/:slug`, `/communities/:id/{join,leave,topics,polls,events}`, `/polls/:id/vote`, `/events/:id/attend` | só membros publicam/votam; voto único; dono não sai            |
 
 ### Banco de dados
 
@@ -143,46 +146,46 @@ src/app/
 
 ### Rotas
 
-| Rota               | Guard        | Tela                              |
-| ------------------ | ------------ | --------------------------------- |
-| `/`                | —            | redireciona para `/home`          |
-| `/login`           | `guestGuard` | Login                             |
-| `/cadastro`        | `guestGuard` | Criar conta                       |
-| `/recuperar-senha` | `guestGuard` | Placeholder (próxima etapa)       |
-| `/home`            | `authGuard`  | Home                              |
-| `/perfil`          | `authGuard`  | redireciona para `/home`          |
-| `/perfil/editar`   | `authGuard`  | Editar perfil                     |
-| `/recados`         | `authGuard`  | Recados (`?para=<amigo>`)         |
-| `/album`           | `authGuard`  | Álbum                             |
-| `/feeds`           | `authGuard`  | Feeds                             |
-| `/mensagens[/:id]` | `authGuard`  | Mensagens (lista / conversa)      |
-| `/depoimentos`     | `authGuard`  | Depoimentos                       |
-| `/configuracoes`   | `authGuard`  | Configurações                     |
-| `/amigos`          | `authGuard`  | Amigos (`?busca=`)                |
-| `/comunidades`     | `authGuard`  | Comunidades (minhas, descobrir, busca, criar) |
+| Rota               | Guard        | Tela                                           |
+| ------------------ | ------------ | ---------------------------------------------- |
+| `/`                | —            | redireciona para `/home`                       |
+| `/login`           | `guestGuard` | Login                                          |
+| `/cadastro`        | `guestGuard` | Criar conta                                    |
+| `/recuperar-senha` | `guestGuard` | Placeholder (próxima etapa)                    |
+| `/home`            | `authGuard`  | Home                                           |
+| `/perfil`          | `authGuard`  | redireciona para `/home`                       |
+| `/perfil/editar`   | `authGuard`  | Editar perfil                                  |
+| `/recados`         | `authGuard`  | Recados (`?para=<amigo>`)                      |
+| `/album`           | `authGuard`  | Álbum                                          |
+| `/feeds`           | `authGuard`  | Feeds                                          |
+| `/mensagens[/:id]` | `authGuard`  | Mensagens (lista / conversa)                   |
+| `/depoimentos`     | `authGuard`  | Depoimentos                                    |
+| `/configuracoes`   | `authGuard`  | Configurações                                  |
+| `/amigos`          | `authGuard`  | Amigos (`?busca=`)                             |
+| `/comunidades`     | `authGuard`  | Comunidades (minhas, descobrir, busca, criar)  |
 | `/comunidades/:id` | `authGuard`  | Comunidade (fórum, enquetes, eventos, membros) |
-| `**`               | —            | 404                               |
+| `**`               | —            | 404                                            |
 
 ## Fidelidade ao design
 
 Referência: `orkut-redesign.figcraft` — páginas _Desktop · 1440_, _Tablet · 834_ e
 _Mobile · 390_, além de _Spec · Design System & Motion_ e _Responsividade · Breakpoints_.
 
-| Frame(s) do design                                         | Implementação            |
-| ---------------------------------------------------------- | ------------------------ |
-| Login · Desktop 1440 / M · Login                           | `features/auth/login`    |
-| Criar conta · Desktop 1440 / M · Criar conta               | `features/auth/signup`   |
-| \_Template · Interna / \_Template · Mobile / M · Menu (drawer) | `layout/`                |
-| Home · Desktop 1440 / T · Home / M · Home                  | `features/home`          |
-| Editar perfil · Desktop 1440 / M · Editar perfil           | `features/profile`       |
-| Recados · Desktop 1440 / M · Recados                       | `features/scraps`        |
-| Álbum · Desktop 1440 / M · Álbum                           | `features/album`         |
-| Feeds · Desktop 1440 / M · Feeds                           | `features/feeds`         |
-| Mensagens · Desktop 1440 / T · Mensagens / M · Mensagens / M · Conversa | `features/messages` |
-| Depoimentos · Desktop 1440 / M · Depoimentos               | `features/testimonials`  |
-| Configurações · Desktop 1440 / M · Configurações           | `features/settings`      |
-| Amigos · Desktop 1440 / M · Amigos                         | `features/friends`       |
-| Comunidade · Desktop 1440 / M · Comunidade                 | `features/community`     |
+| Frame(s) do design                                                      | Implementação           |
+| ----------------------------------------------------------------------- | ----------------------- |
+| Login · Desktop 1440 / M · Login                                        | `features/auth/login`   |
+| Criar conta · Desktop 1440 / M · Criar conta                            | `features/auth/signup`  |
+| \_Template · Interna / \_Template · Mobile / M · Menu (drawer)          | `layout/`               |
+| Home · Desktop 1440 / T · Home / M · Home                               | `features/home`         |
+| Editar perfil · Desktop 1440 / M · Editar perfil                        | `features/profile`      |
+| Recados · Desktop 1440 / M · Recados                                    | `features/scraps`       |
+| Álbum · Desktop 1440 / M · Álbum                                        | `features/album`        |
+| Feeds · Desktop 1440 / M · Feeds                                        | `features/feeds`        |
+| Mensagens · Desktop 1440 / T · Mensagens / M · Mensagens / M · Conversa | `features/messages`     |
+| Depoimentos · Desktop 1440 / M · Depoimentos                            | `features/testimonials` |
+| Configurações · Desktop 1440 / M · Configurações                        | `features/settings`     |
+| Amigos · Desktop 1440 / M · Amigos                                      | `features/friends`      |
+| Comunidade · Desktop 1440 / M · Comunidade                              | `features/community`    |
 
 Itens do spec de movimento e componentes:
 

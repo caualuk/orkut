@@ -7,11 +7,14 @@ export type Database = pg.Pool;
  * Pool de conexões com o PostgreSQL. O TLS valida o certificado do servidor
  * contra a CA raiz do Supabase (nunca `rejectUnauthorized: false`).
  */
-export function createPool(config: AppConfig['database']): Database {
+export function createPool(
+  config: AppConfig['database'],
+  options: { max?: number } = {},
+): Database {
   return new pg.Pool({
     connectionString: config.url,
     ssl: config.ssl,
-    max: 10,
+    max: options.max ?? 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
     application_name: 'orkut-api',

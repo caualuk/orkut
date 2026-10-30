@@ -31,8 +31,8 @@ npm run e2e              # Playwright (sobe backend e frontend se não estiverem
 npm run e2e:report       # relatório HTML
 ```
 
-Os E2E full-stack usam o usuário do seed (`SEED_USER_EMAIL`/`SEED_USER_PASSWORD`, lidos de
-`backend/.env`). Sem essas variáveis, a suíte full-stack é pulada.
+Os E2E full-stack criam um usuário próprio pelo cadastro (`/api/auth/signup`), com e-mail
+único a cada execução, no PostgreSQL configurado em `backend/.env`.
 
 ## O que é coberto
 

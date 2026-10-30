@@ -32,19 +32,17 @@ Monorepo com frontend **Angular 22 + Angular Material 3 + Tailwind CSS 4** e bac
 npm run install:all
 
 # 2. Variáveis de ambiente do backend (NUNCA versionar o .env)
-cp backend/.env.example backend/.env   # preencha DATABASE_URL, SEED_USER_*, etc.
+cp backend/.env.example backend/.env   # preencha DATABASE_URL, etc.
 
 # 3. Banco de dados
 npm run db:migrate     # cria o schema app (users, sessions)
-npm run db:seed        # cria o usuário de desenvolvimento definido no .env
 
 # 4. Em dois terminais
 npm run dev:backend    # http://localhost:3000
 npm run dev:frontend   # http://localhost:4200
 ```
 
-Acesse `http://localhost:4200/login` e entre com `SEED_USER_EMAIL` / `SEED_USER_PASSWORD`,
-ou crie uma conta em `http://localhost:4200/cadastro`.
+Crie uma conta em `http://localhost:4200/cadastro` e entre em `http://localhost:4200/login`.
 
 ## Qualidade
 
@@ -60,5 +58,6 @@ ou crie uma conta em `http://localhost:4200/cadastro`.
 - [Arquitetura](docs/architecture.md)
 - [Segurança](docs/security.md)
 - [Testes](docs/testing.md)
+- [Deploy em produção](docs/deploy.md)
 - [Fluxo de versionamento](docs/contributing.md)
 - [Changelog](CHANGELOG.md)

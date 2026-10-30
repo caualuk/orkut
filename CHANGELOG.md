@@ -7,6 +7,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 
 ### Adicionado
 
+- **Deploy na Vercel** em um único projeto: Angular estático + Express como Serverless
+  Function (`api/index.mjs`), com fallback de SPA e cabeçalhos de segurança; passo a passo
+  em `docs/deploy.md`.
 - **API social com dados reais** (`/api/social`) e migration `003_social`: perfil, foto,
   amizades, recados, mensagens, depoimentos, álbuns e fotos, status, feed com curtidas e
   comentários, comunidades (criação, tópicos, enquetes, eventos) e preferências — tudo
@@ -17,6 +20,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
   sempre oferece procurar o termo entre todas as pessoas.
 - **Feeds**: publicar status; **curtidas e comentários animados** (coração em mola com
   partículas e contador que rola; comentário novo que cresce e brilha).
+- **Excluir conta** em Configurações → Conta e segurança: confirmação pela senha atual
+  (`DELETE /api/auth/account`, com rate limit do login); apaga a conta e, em cascata, sessões,
+  perfil, recados, mensagens, depoimentos, fotos e comunidades criadas.
 - **Favicon** com a letra "o" do logotipo (Poppins Bold vetorizada, gradiente da marca),
   além de `apple-touch-icon` e ícones 192/512.
 
@@ -91,5 +97,5 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 ### Integração
 
 - Em 2026-10-29 a branch `caualuk-orkut-login` foi integrada à `main` por
-  *fast-forward* (`git merge --ff-only`), sem Pull Request, porque a `main` só tinha
+  _fast-forward_ (`git merge --ff-only`), sem Pull Request, porque a `main` só tinha
   o commit inicial e não havia divergência. O CI roda no push para a `main`.

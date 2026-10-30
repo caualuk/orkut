@@ -1,30 +1,8 @@
-import { createApp } from './app.js';
-import { loadConfig } from './config/env.js';
-import { createPool } from './db/pool.js';
-import { PgAuthRepository } from './modules/auth/auth.repository.js';
-import { AuthService } from './modules/auth/auth.service.js';
-import { PgSocialRepository } from './modules/social/social.repository.js';
+import { bootstrap } from './bootstrap.js';
 import { logger } from './shared/logger.js';
-import { argon2Hasher } from './shared/security/password.js';
 
-/** Composition root: instancia as dependências concretas e sobe o servidor HTTP. */
-const config = loadConfig();
-const db = createPool(config.database);
-
-const authService = new AuthService(new PgAuthRepository(db), argon2Hasher, {
-  sessionTtlMs: config.session.ttlMs,
-  rememberMs: config.session.rememberMs,
-});
-
-const app = createApp({
-  config,
-  logger,
-  authService,
-  socialRepository: new PgSocialRepository(db),
-  healthCheck: async () => {
-    await db.query('select 1');
-  },
-});
+/** Servidor HTTP (desenvolvimento e hospedagem tradicional). Na Vercel, ver `api/index.mjs`. */
+const { app, config, db } = bootstrap();
 
 const server = app.listen(config.port, () => {
   logger.info({ port: config.port, env: config.env }, 'API do orkut iniciada');
